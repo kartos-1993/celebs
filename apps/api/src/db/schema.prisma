@@ -1300,7 +1300,6 @@ model Product {
   status          String   @default("draft") // draft, pending_review, published, rejected, deactivated, archived
   featured        Boolean  @default(false)
   mainImages      String[]
-  tags            String[]
 
   // Flexible Document JSONB Fields
   sizes          Json? // Array of ISize (productMeasurements + bodyMeasurements)

@@ -2,7 +2,7 @@
 
 Date: 2026-10-19
 Branch: `chore/drop-tag-column`
-Status: planned
+Status: done (local test DB migrated; shared Supabase deployment pending approval)
 
 ## Context
 
@@ -80,27 +80,32 @@ run against the current database.
 ### Commit 3 — drop the column (last)
 
 - Remove `tags String[]` from the `Product` model.
-- Generate the migration on the direct port-5432 URL per the `prisma-cli`
-  runbook, named `drop_product_tags`.
+- Generate the migration offline with `prisma migrate diff` (Prisma 7 uses
+  `--from-schema` / `--to-schema`), named `drop_product_tags`.
 - Expected SQL: `ALTER TABLE "Product" DROP COLUMN "tags";`
-- Apply to the local test database, regenerate the Prisma client, and re-run the
-  targeted suites.
-- Do **not** deploy to the shared dev database without explicit approval. The
-  drop is irreversible; take a snapshot first if it is ever deployed.
+- Validate the SQL on a scratch local PostgreSQL database.
+- Apply it to the local test DB (`localhost:5432/celebs_test`) with the repo's
+  `db push --accept-data-loss` flow — the same flow used by `pnpm test` and CI.
+  The existing local DB has migration drift and is not deploy-managed, so
+  `migrate deploy` cannot be used there.
+- Regenerate the Prisma client and re-run the targeted suites.
+- Do **not** touch the Supabase development database. Deploy the migration
+  there later with `prisma migrate deploy` after explicit approval and a
+  snapshot. The drop is irreversible.
 
 ## Acceptance matrix
 
-| Check                                      | Expected                                                         |
-| ------------------------------------------ | ---------------------------------------------------------------- |
-| `POST /products` with no tags              | product created; response has no `tags` key                      |
-| `POST /products` with a stray `tags` value | Zod strips it (schema is non-strict); product created without it |
-| `PATCH /products/:id`                      | stored product has no `tags`; response has no `tags` key         |
-| `GET /products`                            | cards have no `tags` key                                         |
-| Seed rerun                                 | 36 products, none carrying `tags`                                |
-| Search by name or brand                    | still returns matches; no tag search existed                     |
-| `GET /combos?tag=`                         | unaffected (`ComboBundle.tag` untouched)                         |
-| Database                                   | `Product.tags` absent from `information_schema.columns`          |
-| Reference audit                            | no `Product.tags` reads/writes left in code or seed data         |
+| Check                                      | Expected                                                                              |
+| ------------------------------------------ | ------------------------------------------------------------------------------------- |
+| `POST /products` with no tags              | product created; response has no `tags` key                                           |
+| `POST /products` with a stray `tags` value | Zod strips it (schema is non-strict); product created without it                      |
+| `PATCH /products/:id`                      | stored product has no `tags`; response has no `tags` key                              |
+| `GET /products`                            | cards have no `tags` key                                                              |
+| Seed rerun                                 | 36 products, none carrying `tags`                                                     |
+| Search by name or brand                    | still returns matches; no tag search existed                                          |
+| `GET /combos?tag=`                         | unaffected (`ComboBundle.tag` untouched)                                              |
+| Database                                   | `Product.tags` absent in the local test DB after sync; shared Supabase pending deploy |
+| Reference audit                            | no `Product.tags` reads/writes left in code or seed data                              |
 
 ## Verification
 
@@ -117,6 +122,7 @@ npx dotenv -e .env.test -- npx vitest run \
   src/modules/product/__tests__/product-controller.spec.ts \
   src/modules/product/__tests__/product-service-wiring.spec.ts \
   src/modules/product/__tests__/product-audit.spec.ts \
+  src/modules/product/__tests__/product-category-tree-search.spec.ts \
   src/db/seed/__tests__/seed-products.spec.ts \
   src/scripts/maintenance/__tests__/merge-seed-batch.spec.ts
 npx tsc --noEmit
@@ -138,4 +144,37 @@ npx tsc -b --noEmit
 
 ## Execution log
 
-- Pending.
+### Commit 2 — `84cf83e0 refactor(product): remove tags from contracts, payloads and seeds`
+
+- 21 files: shared contracts, API write/read path, web-admin create payload,
+  and the 36 seed arrays. `ComboBundle.tag` and OpenAPI route `tags` untouched.
+- API targeted: 7 files, 94/94.
+- Web-admin payload builder: 33/33.
+- `tsc --noEmit` (API): 0; web-admin `tsc -b --noEmit`: 0.
+- Spec `tsc`: 37 errors, the recorded baseline; none in touched files.
+
+### Commit 3 — migration `20261019141759_drop_product_tags`
+
+- `.env.test` targets the local database `localhost:5432/celebs_test`
+  (the same target CI uses). The Supabase development database is separate and
+  was not touched.
+- Generated the migration offline:
+  `prisma migrate diff --from-schema <HEAD> --to-schema <working> --script`.
+- SQL: `ALTER TABLE "Product" DROP COLUMN "tags";`
+- Validated on a scratch local PostgreSQL 15 database at `localhost:5432`:
+  `tags` column count went 1 → 0 and the product row survived. Scratch DB
+  dropped afterwards.
+- `migrate deploy` was attempted on `celebs_test` and stopped on pre-existing
+  drift (`20261010000000_seller_statements`: the `SellerStatementStatus` enum
+  already exists). The failed attempt was marked rolled back; no part of this
+  branch's migration was applied by that command.
+- Applied through the repo's test/CI flow instead:
+  `prisma db push --accept-data-loss` against `.env.test`. The local `tags`
+  column went 1 → 0, with all 3 product rows preserved.
+- Regenerated Prisma Client v7.2.0; the generated types contain no `tags`.
+- Post-drop gates: 8 files / 97 tests (includes category-tree search),
+  API `tsc` 0, spec `tsc` 37-error baseline.
+- The Supabase development database still has the physical column; it is
+  nullable and unused, so the new client is compatible. Deployment there is
+  pending explicit approval: `prisma migrate deploy` on the direct 5432 URL,
+  after a snapshot. The drop is irreversible.
