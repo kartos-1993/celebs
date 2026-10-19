@@ -50,12 +50,6 @@ export function syntheticZoneExternalId(province: string, district: string): num
  * threshold and `isActive` once it has run, and re-seeding must not undo an
  * admin's corrections or un-retire a district a courier has dropped.
  */
-const WELL_KNOWN_PATHAO_CITY_IDS: Record<string, { cityId: number; defaultZoneId: number }> = {
-  Kathmandu: { cityId: 79, defaultZoneId: 1326 },
-  Lalitpur: { cityId: 80, defaultZoneId: 1327 },
-  Bhaktapur: { cityId: 81, defaultZoneId: 1328 },
-};
-
 export async function seedLogisticsLocations(): Promise<void> {
   console.log('\n--- 📍 Seeding Delivery Areas (Nepal districts) ---');
 
@@ -67,29 +61,23 @@ export async function seedLogisticsLocations(): Promise<void> {
 
     for (const district of province.districts) {
       const isValley = isValleyDistrict(district);
-      const wellKnown = WELL_KNOWN_PATHAO_CITY_IDS[district];
       const existing = await prisma.logisticsCity.findFirst({
         where: { name: district, province: provinceName },
-        select: { id: true, externalId: true },
+        select: { id: true },
       });
 
       if (existing) {
         kept += 1;
-        if (existing.externalId === null && wellKnown) {
-          await prisma.logisticsCity.update({
-            where: { id: existing.id },
-            data: { externalId: wellKnown.cityId },
-          });
-        }
         await ensureDefaultZone(existing.id, provinceName, district);
         continue;
       }
 
+      // No externalId: this row is our reference data, not a courier feed. A
+      // courier sync creates the owning row and reconciliation retires this one.
       const city = await prisma.logisticsCity.create({
         data: {
           name: district,
           province: provinceName,
-          externalId: wellKnown?.cityId ?? null,
           isValley,
           freeDeliveryThreshold: isValley
             ? valleyFreeDeliveryThreshold
@@ -119,26 +107,17 @@ async function ensureDefaultZone(
   province: string,
   district: string,
 ): Promise<void> {
-  const wellKnown = WELL_KNOWN_PATHAO_CITY_IDS[district];
   const existing = await prisma.logisticsZone.findFirst({
     where: { cityId },
-    select: { id: true, externalId: true },
+    select: { id: true },
   });
 
-  if (existing) {
-    if (existing.externalId < 0 && wellKnown) {
-      await prisma.logisticsZone.update({
-        where: { id: existing.id },
-        data: { externalId: wellKnown.defaultZoneId },
-      });
-    }
-    return;
-  }
+  if (existing) return;
 
   await prisma.logisticsZone.create({
     data: {
       cityId,
-      externalId: wellKnown?.defaultZoneId ?? syntheticZoneExternalId(province, district),
+      externalId: syntheticZoneExternalId(province, district),
       name: district,
     },
   });

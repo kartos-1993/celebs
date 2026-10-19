@@ -56,6 +56,37 @@ describe('reconciling seeded districts against a courier sync', () => {
     expect((await cityActive(seeded.cityId))?.isActive).toBe(false);
   });
 
+  // A bootstrap district seeded before reference rows stopped carrying courier
+  // ids may already hold the id the courier sends. The sync adopts that row; it
+  // must not then classify it as a superseded bootstrap row and retire it.
+  it('adopts a seeded district that already holds the courier id', async () => {
+    const seeded = await prisma.logisticsCity.create({
+      data: {
+        name: 'Kathmandu',
+        province: 'Bagmati',
+        source: 'BOOTSTRAP',
+        externalId: 911,
+      },
+      select: { id: true },
+    });
+    await prisma.logisticsZone.create({
+      data: { cityId: seeded.id, externalId: 5011, name: 'Kathmandu' },
+    });
+
+    await new LogisticsLocationSyncService(
+      fakeCourier([{ id: 911, name: 'Kathmandu' }], {
+        911: [{ id: 5011, name: 'Kathmandu' }],
+      }),
+    ).sync();
+
+    const adopted = await prisma.logisticsCity.findUnique({
+      where: { id: seeded.id },
+      select: { source: true, isActive: true },
+    });
+    expect(adopted).toEqual({ source: 'COURIER', isActive: true });
+    expect(await prisma.logisticsCity.count({ where: { name: 'Kathmandu' } })).toBe(1);
+  });
+
   it('matches a seeded district on name regardless of casing or padding', async () => {
     const seeded = await seedBootstrapDistrict('Lalitpur');
 

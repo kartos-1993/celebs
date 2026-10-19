@@ -158,7 +158,7 @@ describe('Access Control Matrix', () => {
 
     const cases: Array<{
       name: string;
-      method: 'get' | 'post';
+      method: 'get' | 'post' | 'delete';
       url: string | (() => Promise<string>);
       body?: Record<string, unknown> | (() => Record<string, unknown>);
       expect: Record<ActorKey, Cell>;
@@ -195,10 +195,9 @@ describe('Access Control Matrix', () => {
         },
       },
       {
-        name: 'destructive own-listing operation (archive)',
-        method: 'post',
-        url: async () => `${BASE}/products/${await mkFreshDraft()}/archive`,
-        body: {},
+        name: 'destructive own-listing operation (delete)',
+        method: 'delete',
+        url: async () => `${BASE}/products/${await mkFreshDraft()}`,
         expect: {
           anon: [401],
           customer: [403, 'SELLER_CONTEXT_REQUIRED'],

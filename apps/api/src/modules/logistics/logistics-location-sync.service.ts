@@ -223,9 +223,14 @@ export class LogisticsLocationSyncService {
       // A city is created once. On later syncs only the name is refreshed, so an
       // admin's `isValley` correction and the free-delivery threshold they may
       // have tuned survive a sync. A city the courier serves again comes back.
+      //
+      // `source` is part of the update because a legacy bootstrap row may already
+      // hold this courier id. Without the transition, reconcile would see a
+      // BOOTSTRAP row whose name the courier serves and retire the row the sync
+      // has just confirmed.
       const record = await prisma.logisticsCity.upsert({
         where: { externalId: city.id },
-        update: { name: city.name, syncedAt, isActive: true },
+        update: { name: city.name, syncedAt, isActive: true, source: 'COURIER' },
         create: {
           externalId: city.id,
           name: city.name,

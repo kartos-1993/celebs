@@ -2,6 +2,43 @@ import request from 'supertest';
 import { describe, expect, it } from 'vitest';
 
 import app from '@/app';
+import { hashValue } from '@/common/utils/bcrypt';
+import { signJwtToken } from '@/common/utils/jwt';
+import prisma from '@/config/db.prisma';
+
+const uniq = (prefix: string) =>
+  `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+
+/**
+ * The media router mounts its rate limiter after identity so the upload quota
+ * is keyed by user rather than a shared IP (2c950fb9). A media request must
+ * therefore carry a real vendor session to reach the limiter at all.
+ */
+async function mkVendorToken(): Promise<string> {
+  const user = await prisma.user.create({
+    data: {
+      name: 'Rate Limit Vendor',
+      email: `${uniq('rl')}@rate-limit.test`,
+      password: await hashValue('Password123!'),
+      role: 'VENDOR',
+      isEmailVerified: true,
+    },
+  });
+  await prisma.vendorProfile.create({
+    data: {
+      userId: user.id,
+      shopName: uniq('Rate Limit Shop'),
+      phoneNumber: uniq('980'),
+      panNumber: uniq('PAN'),
+      citizenshipNumber: uniq('CIT'),
+      status: 'PENDING',
+    },
+  });
+  const session = await prisma.session.create({
+    data: { userId: user.id, userAgent: 'rate-limit' },
+  });
+  return signJwtToken({ userId: user.id, sessionId: session.id });
+}
 
 describe('Rate Limiting System', () => {
   describe('Auth Rate Limiter (/api/v1/auth/*)', () => {
@@ -33,9 +70,15 @@ describe('Rate Limiting System', () => {
 
   describe('Media Upload Rate Limiter (/api/v1/media/*)', () => {
     it('should return 429 Too Many Requests when upload limit (30) is exceeded', async () => {
+      const token = await mkVendorToken();
+
       let lastRes: request.Response | undefined;
       for (let i = 0; i < 31; i++) {
-        lastRes = await request(app).post('/api/v1/media/upload').set('x-test-rate-limit', 'true');
+        lastRes = await request(app)
+          .post('/api/v1/media/presign')
+          .set('x-test-rate-limit', 'true')
+          .set('Authorization', `Bearer ${token}`)
+          .send({});
       }
 
       expect(lastRes?.status).toBe(429);
