@@ -9,6 +9,7 @@ const cartRoutes = Router();
 // Public / Guest / Logged-in Cart routes (uses optional JWT auth)
 cartRoutes.get('/', optionalAuthenticateJWT, CartController.getCart);
 cartRoutes.post('/items', optionalAuthenticateJWT, CartController.addToCart);
+cartRoutes.post('/combos', optionalAuthenticateJWT, CartController.addCombo);
 cartRoutes.patch('/items/:itemId', optionalAuthenticateJWT, CartController.updateCartItem);
 cartRoutes.delete('/items/:itemId', optionalAuthenticateJWT, CartController.removeCartItem);
 cartRoutes.delete('/', optionalAuthenticateJWT, CartController.clearCart);

@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { randomUUID } from 'node:crypto';
 
 import {
+  addComboToCartSchema,
   addToCartSchema,
   CartResponse,
   syncCartSchema,
@@ -130,6 +131,22 @@ export class CartController {
     );
 
     sendSuccess(res, cart, 'Item added to cart successfully');
+  });
+
+  static addCombo = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { userId } = CartController.extractIdentifiers(req);
+    let { sessionId } = CartController.extractIdentifiers(req);
+
+    // Lazy generation: only provision a session when mutating
+    if (!userId) {
+      sessionId = CartController.ensureSessionId(res, sessionId);
+    }
+
+    const validatedInput = addComboToCartSchema.parse(req.body);
+
+    const cart = await CartService.addComboToCart(userId, sessionId, validatedInput);
+
+    sendSuccess(res, cart, 'Combo added to cart successfully');
   });
 
   static updateCartItem = asyncHandler(async (req: Request, res: Response): Promise<void> => {

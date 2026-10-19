@@ -47,6 +47,8 @@ interface CreatedOrderRecord {
   courierFee: Prisma.Decimal;
   absorbedShippingCost: Prisma.Decimal;
   deliveryPricingSource: string;
+  subtotal: Prisma.Decimal;
+  items: Array<{ unitPrice: Prisma.Decimal; subtotal: Prisma.Decimal }>;
 }
 
 interface LineConfig {
@@ -54,6 +56,8 @@ interface LineConfig {
   unitPrice: number;
   unitWeightKg: number;
   quantity?: number;
+  /** Per-unit combo discount written on the cart line by POST /cart/combos. */
+  appliedDiscount?: number;
 }
 
 function createCheckoutTestHarness(lines: LineConfig[]) {
@@ -87,6 +91,8 @@ function createCheckoutTestHarness(lines: LineConfig[]) {
         items: lines.map((line, index) => ({
           id: `line-${index + 1}`,
           quantity: line.quantity ?? 1,
+          appliedDiscount:
+            line.appliedDiscount !== undefined ? new Prisma.Decimal(line.appliedDiscount) : null,
           inventory: {
             id: `inv-${index + 1}`,
             productId: `prod-${index + 1}`,
@@ -281,6 +287,39 @@ describe('Checkout Nationwide Delivery & Rate-Card Decoupling', () => {
     expect(orderPayload.shippingFee.toNumber()).toBe(0);
     expect(orderPayload.absorbedShippingCost.toNumber()).toBe(100);
     expect(orderPayload.totalAmount.toNumber()).toBe(3500);
+  });
+
+  it('charges the combo-discounted unit price carried on the cart line', async () => {
+    // The cart line keeps the product price (1200) and carries a 200 per-unit
+    // combo discount. Checkout must bill 1000 a unit through the same
+    // line-price authority the cart renders from — the exact divergence the
+    // review flagged (cart shows the discount, checkout charges full price) is
+    // what this asserts against.
+    mockThresholdForAddress.mockResolvedValue({
+      cityId: 'city-ktm',
+      zoneId: 'zone-ktm',
+      cityName: 'Kathmandu',
+      isValley: true,
+      freeDeliveryThreshold: new Prisma.Decimal(3000),
+    });
+
+    const { service, createOrderWithReservation } = createCheckoutTestHarness([
+      { vendorId: 'vendor-1', unitPrice: 1200, unitWeightKg: 0.5, appliedDiscount: 200 },
+    ]);
+
+    await service.checkout(USER_ID, {
+      addressId: ADDRESS_ID,
+      paymentMethod: 'COD',
+      idempotencyKey: 'idem-combo-1',
+    });
+
+    expect(createOrderWithReservation).toHaveBeenCalledTimes(1);
+    const orderPayload = createOrderWithReservation.mock.calls[0]![0] as CreatedOrderRecord;
+
+    expect(orderPayload.items[0]!.unitPrice.toNumber()).toBe(1000);
+    expect(orderPayload.items[0]!.subtotal.toNumber()).toBe(1000);
+    expect(orderPayload.subtotal.toNumber()).toBe(1000);
+    expect(orderPayload.totalAmount.toNumber()).toBe(1100);
   });
 
   it('rejects checkout with resource not found when destination address does not exist', async () => {

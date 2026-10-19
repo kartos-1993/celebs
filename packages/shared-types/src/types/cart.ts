@@ -8,6 +8,19 @@ export interface CartItemHydrated {
   productBrand?: string;
   price: number;
   discountedPrice?: number;
+  /**
+   * Effective per-unit price charged for this line, from the single line-price
+   * authority: sale price (only when it is a real discount) minus any applied
+   * per-unit combo discount, floored at zero. The app displays this figure and
+   * checkout charges from the same rule, so the two cannot disagree.
+   */
+  unitPrice: number;
+  /** Per-unit combo discount currently applied to this line; 0 for plain lines. */
+  appliedDiscount: number;
+  /** The combo bundle this line was added through, when it is a combo line. */
+  comboBundleId?: string;
+  /** Provenance of `appliedDiscount` ('COMBO'); absent for plain lines. */
+  discountSource?: string;
   colorVariantName: string;
   colorCode: string;
   image: string;

@@ -11,11 +11,13 @@ import {
 } from '@celebs/shared-utils';
 
 /**
- * Unit price via the shared discount choke point: an above-list, zero, NaN or
- * absent discountedPrice can never inflate a cart total.
+ * The charged per-unit price, exactly as the server priced it: base price
+ * (sale price only when it is a real discount) minus any applied per-unit
+ * combo discount. The server's single line-price authority is what checkout
+ * charges from, so the cart renders that figure rather than recomputing a
+ * second opinion that can drift from the bill.
  */
-export const getUnitPrice = (item: CartItemHydrated): number =>
-  validDiscount(item.price, item.discountedPrice) ?? item.price;
+export const getUnitPrice = (item: CartItemHydrated): number => item.unitPrice;
 
 export const getDiscountPercent = (item: CartItemHydrated): number => {
   const deal = validDiscount(item.price, item.discountedPrice);

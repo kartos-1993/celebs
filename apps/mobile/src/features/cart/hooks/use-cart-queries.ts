@@ -71,6 +71,9 @@ function buildOptimisticItem(input: AddToCartInput): CartItemHydrated {
     productName: '',
     productSlug: '',
     price: 0,
+    // Nothing has been priced yet; the optimistic row must not invent a figure.
+    unitPrice: 0,
+    appliedDiscount: 0,
     colorVariantName: input.colorVariantName,
     colorCode: '',
     image: NO_LINE_IMAGE,

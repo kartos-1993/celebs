@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 
 import {
+  AddComboToCartInput,
   AddToCartInput,
   CartItemHydrated,
   CartResponse,
@@ -8,10 +9,12 @@ import {
 } from '@celebs/shared-types';
 import { AppError, ErrorCode, generateSku, HTTPSTATUS } from '@celebs/shared-utils';
 
+import { comboRepository } from '../combo/combo.repository';
 import { InventoryService } from '../inventory/inventory.service';
 import { resolveCover } from '../product/utils/product-image.util';
 
 import { cartRepository } from './cart.repository';
+import { resolveCartLineUnitPrice, resolveComboLineUnitDiscounts } from './cart-line-price';
 
 import { PLATFORM_VENDOR_ID } from '@/common/constants/platform-vendor';
 import prisma, { Prisma } from '@/config/db.prisma';
@@ -124,8 +127,17 @@ export class CartService {
 
       const rawPrice = product?.price ? Number(product.price) : 0;
       const rawDiscounted = product?.discountedPrice ? Number(product.discountedPrice) : undefined;
-      const price = rawDiscounted || rawPrice;
       const discountedPrice = rawDiscounted && rawDiscounted < rawPrice ? rawDiscounted : undefined;
+
+      // The charged per-unit figure for this line, from the single line-price
+      // authority checkout also prices from. Combo discounts live in that rule
+      // rather than in a second copy of the arithmetic downstream.
+      const unitPriceDecimal = resolveCartLineUnitPrice({
+        price: product?.price ?? 0,
+        discountedPrice: product?.discountedPrice ?? null,
+        appliedDiscount: item.appliedDiscount,
+      });
+      const unitPrice = unitPriceDecimal.toNumber();
 
       // Canonical product cover, from the SINGLE process-wide resolver
       // (`product/utils/product-image.util.resolveCover`):
@@ -142,8 +154,7 @@ export class CartService {
       const cover = resolveCover(product?.mainImages, product?.colorVariants);
 
       if (isAvailable) {
-        const priceDecimal = new Prisma.Decimal(price);
-        subtotalDecimal = subtotalDecimal.add(priceDecimal.mul(item.quantity));
+        subtotalDecimal = subtotalDecimal.add(unitPriceDecimal.mul(item.quantity));
         itemCount += item.quantity;
 
         // Billable weight for the line, accumulated here rather than read back off
@@ -161,13 +172,13 @@ export class CartService {
           existingParcel.declaredWeightKg =
             existingParcel.declaredWeightKg.plus(declaredLineWeightKg);
           existingParcel.goodsAmount = existingParcel.goodsAmount.add(
-            priceDecimal.mul(item.quantity),
+            unitPriceDecimal.mul(item.quantity),
           );
         } else {
           previewParcels.push({
             vendorId: sellerId,
             declaredWeightKg: declaredLineWeightKg,
-            goodsAmount: priceDecimal.mul(item.quantity),
+            goodsAmount: unitPriceDecimal.mul(item.quantity),
             lineIds: [item.id],
           });
         }
@@ -197,6 +208,12 @@ export class CartService {
         productBrand: product?.brand || undefined,
         price: rawPrice,
         discountedPrice,
+        // The charged unit price plus its combo provenance, projected so the
+        // app renders the line without redoing any money arithmetic.
+        unitPrice,
+        appliedDiscount: item.appliedDiscount ? Number(item.appliedDiscount) : 0,
+        comboBundleId: item.comboBundleId ?? undefined,
+        discountSource: item.discountSource ?? undefined,
         colorVariantName: item.inventory.colorVariantName,
         colorCode: '#000000',
         // `cover` is the canonical field; `image` carries the same value for
@@ -225,8 +242,9 @@ export class CartService {
     // zone the conservative threshold stands, because promising free delivery the
     // server would then decline is the same bug as promising it and charging for
     // it.
-    // Only the district is needed now: the courier prices delivery, so the cart no
-    // longer fetches rate bands to pick a fee from.
+    // The destination's rate bands price delivery - the flat policy fee is the
+    // fallback - and checkout quotes through the same resolver, so the figure
+    // shown here is the figure billed.
     const destination = await this.resolveDefaultDestination(userId);
     const activeRates = await deliveryPricingRepository.activeRates(destination?.cityId ?? null);
     const totalWeightKg = sumBillableWeightKg(previewParcels.map((p) => p.declaredWeightKg));
@@ -338,8 +356,21 @@ export class CartService {
         where: {
           cartId_inventoryId: { cartId: cartRecord.id, inventoryId: stock.inventoryId },
         },
-        select: { quantity: true },
+        select: { quantity: true, comboBundleId: true },
       });
+
+      // The atomic upsert refuses to merge a plain add into a combo line, so
+      // the bundle's per-unit discount can never silently cover units bought
+      // at full price. Report that refusal as itself, not as a phantom stock
+      // failure.
+      if (existing?.comboBundleId) {
+        throw new AppError(
+          'This item is already in your cart as part of a combo bundle. Remove the combo line to add it separately.',
+          HTTPSTATUS.BAD_REQUEST,
+          ErrorCode.VALIDATION_ERROR,
+        );
+      }
+
       const targetQuantity = (existing?.quantity ?? 0) + quantity;
       throw new AppError(
         `Requested quantity (${targetQuantity}) exceeds available stock (${stock.availableQuantity})`,
@@ -347,6 +378,207 @@ export class CartService {
         ErrorCode.VALIDATION_ERROR,
       );
     }
+
+    return this.getCart(userId, sessionId);
+  }
+
+  /**
+   * Add a combo bundle to the cart: validates the bundle composition, prorates
+   * the bundle discount per line, and writes every line in one atomic batch.
+   *
+   * All-or-nothing: a bundle is one purchase, so a line losing a stock race
+   * rolls the whole add back instead of charging for a partial bundle.
+   *
+   * Hot path cost: one combo read + one product batch + one inventory resolve
+   * per line (race-safe, outside the transaction) + ONE batched CTE write
+   * inside a bounded interactive transaction.
+   */
+  static async addComboToCart(
+    userId: string | undefined,
+    sessionId: string | undefined,
+    input: AddComboToCartInput,
+  ): Promise<CartResponse> {
+    const bundle = await comboRepository.findById(input.comboBundleId);
+
+    if (!bundle) {
+      throw new AppError(
+        'Combo bundle not found',
+        HTTPSTATUS.NOT_FOUND,
+        ErrorCode.RESOURCE_NOT_FOUND,
+      );
+    }
+
+    if (!bundle.isActive) {
+      throw new AppError(
+        'This combo bundle is no longer available',
+        HTTPSTATUS.BAD_REQUEST,
+        ErrorCode.VALIDATION_ERROR,
+      );
+    }
+
+    const bundleItemsByProductId = new Map(bundle.items.map((item) => [item.productId, item]));
+    const requestedProductIds = new Set<string>();
+
+    const resolvedLines = input.items.map((line) => {
+      const bundleItem = bundleItemsByProductId.get(line.productId);
+
+      if (!bundleItem) {
+        throw new AppError(
+          'A selected product is not part of this combo bundle',
+          HTTPSTATUS.BAD_REQUEST,
+          ErrorCode.VALIDATION_ERROR,
+        );
+      }
+
+      if (requestedProductIds.has(line.productId)) {
+        throw new AppError(
+          'A product may appear only once in a combo add',
+          HTTPSTATUS.BAD_REQUEST,
+          ErrorCode.VALIDATION_ERROR,
+        );
+      }
+      requestedProductIds.add(line.productId);
+
+      // The modal picks variant and size; quantity is the bundle's business.
+      // An omitted quantity resolves to the bundle item's own default.
+      return {
+        productId: line.productId,
+        colorVariantName: line.colorVariantName,
+        size: line.size,
+        quantity: line.quantity ?? bundleItem.defaultQuantity,
+      };
+    });
+
+    const bundleIsComplete = bundle.items.every(
+      (item) => !item.isRequired || requestedProductIds.has(item.productId),
+    );
+
+    if (!bundleIsComplete) {
+      throw new AppError(
+        'The combo is incomplete: every required item must be included',
+        HTTPSTATUS.BAD_REQUEST,
+        ErrorCode.VALIDATION_ERROR,
+      );
+    }
+
+    const products = await prisma.product.findMany({
+      where: { id: { in: Array.from(requestedProductIds) } },
+      select: { id: true, price: true, discountedPrice: true },
+    });
+    const productsById = new Map(products.map((product) => [product.id, product]));
+
+    if (products.length !== requestedProductIds.size) {
+      throw new AppError(
+        'A product in this combo is no longer available',
+        HTTPSTATUS.BAD_REQUEST,
+        ErrorCode.VALIDATION_ERROR,
+      );
+    }
+
+    // Deterministic pre-write order: inventory resolution and row locks follow
+    // the same product order on every request, so concurrent adds cannot take
+    // the same rows in opposite orders.
+    const orderedLines = [...resolvedLines].sort(
+      (a, b) =>
+        a.productId.localeCompare(b.productId) ||
+        a.colorVariantName.localeCompare(b.colorVariantName) ||
+        a.size.localeCompare(b.size),
+    );
+
+    const inventoryIdByLineKey = new Map<string, string>();
+
+    for (const line of orderedLines) {
+      const lineKey = `${line.productId}|${line.colorVariantName}|${line.size}`;
+
+      // Race-safe resolve-or-create; a service call rather than duplicated SQL
+      // so the JSON-stock fallback keeps exactly one home.
+      const inventory = await InventoryService.findOrCreateInventory(
+        line.productId,
+        line.colorVariantName,
+        line.size,
+      );
+
+      if (inventory.availableQuantity < line.quantity) {
+        throw new AppError(
+          `Insufficient stock for ${line.colorVariantName} - ${line.size}. Available: ${inventory.availableQuantity}, Requested: ${line.quantity}`,
+          HTTPSTATUS.BAD_REQUEST,
+          ErrorCode.VALIDATION_ERROR,
+        );
+      }
+
+      inventoryIdByLineKey.set(lineKey, inventory.inventoryId);
+    }
+
+    const unitDiscounts = resolveComboLineUnitDiscounts(
+      { discountType: bundle.discountType, discountValue: bundle.discountValue },
+      orderedLines.map((line) => ({
+        listPrice: productsById.get(line.productId)?.price ?? 0,
+        quantity: line.quantity,
+      })),
+    );
+
+    // Lock order inside the transaction: unique identifier, per the batch-write
+    // deadlock discipline.
+    const writeLines = orderedLines
+      .map((line, index) => ({
+        inventoryId: inventoryIdByLineKey.get(
+          `${line.productId}|${line.colorVariantName}|${line.size}`,
+        )!,
+        quantity: line.quantity,
+        unitDiscount: unitDiscounts[index]!,
+      }))
+      .sort((a, b) => a.inventoryId.localeCompare(b.inventoryId));
+
+    const cartRecord = await this.getOrCreateCartRecord(userId, sessionId);
+
+    await prisma.$transaction(
+      async (tx) => {
+        const itemIds = writeLines.map(() => randomUUID());
+
+        const rows = await tx.$queryRaw<Array<{ inventory_id: string }>>`
+          WITH item AS (
+            INSERT INTO "CartItem"
+              ("id", "cart_id", "inventory_id", "quantity", "combo_bundle_id", "applied_discount", "discount_source", "createdAt", "updatedAt")
+            SELECT b.item_id, ${cartRecord.id}, b.inv_id, b.qty, ${bundle.id}, b.discount, 'COMBO', now(), now()
+            FROM unnest(
+              ${itemIds}::text[],
+              ${writeLines.map((line) => line.inventoryId)}::text[],
+              ${writeLines.map((line) => line.quantity)}::int[],
+              ${writeLines.map((line) => line.unitDiscount.toString())}::numeric[]
+            ) AS b(item_id, inv_id, qty, discount)
+            JOIN "ProductInventory" pi
+              ON pi."id" = b.inv_id
+             AND (pi."quantity" - pi."reserved_quantity") >= b.qty
+            ON CONFLICT ("cart_id", "inventory_id") DO UPDATE
+              SET "quantity" = "CartItem"."quantity" + EXCLUDED."quantity",
+                  "combo_bundle_id" = EXCLUDED."combo_bundle_id",
+                  "applied_discount" = EXCLUDED."applied_discount",
+                  "discount_source" = EXCLUDED."discount_source",
+                  "updatedAt" = now()
+              WHERE (
+                -- CTEs are not referenceable inside DO UPDATE; re-read live stock.
+                SELECT pi2."quantity" - pi2."reserved_quantity"
+                FROM "ProductInventory" pi2
+                WHERE pi2."id" = EXCLUDED."inventory_id"
+              ) >= "CartItem"."quantity" + EXCLUDED."quantity"
+            RETURNING "inventory_id"
+          )
+          SELECT "inventory_id" FROM item
+        `;
+
+        // A shortfall means a line lost a stock race after the pre-check. The
+        // bundle is one purchase: roll the whole add back rather than charging
+        // for a partial bundle.
+        if (rows.length !== writeLines.length) {
+          throw new AppError(
+            'The combo could not be added because one of its items just went out of stock. Nothing was added — please try again.',
+            HTTPSTATUS.BAD_REQUEST,
+            ErrorCode.VALIDATION_ERROR,
+          );
+        }
+      },
+      { maxWait: 5000, timeout: 10000 },
+    );
 
     return this.getCart(userId, sessionId);
   }
@@ -418,6 +650,9 @@ export class CartService {
             FROM "ProductInventory" pi2
             WHERE pi2."id" = EXCLUDED."inventory_id"
           ) >= "CartItem"."quantity" + EXCLUDED."quantity"
+            -- Combo lines are owned by the combo flow: a plain add must not
+            -- silently extend a bundle's per-unit discount to full-price units.
+            AND "CartItem"."combo_bundle_id" IS NULL
         RETURNING "inventory_id"
       )
       SELECT inv.avail AS avail
@@ -701,6 +936,9 @@ export class CartService {
         ON CONFLICT ("cart_id", "inventory_id") DO UPDATE
           SET "quantity" = EXCLUDED."quantity",
               "updatedAt" = now()
+          -- Combo lines keep their bundle pricing: like the out-of-stock lines
+          -- above, they are skipped silently rather than merged at full price.
+          WHERE "CartItem"."combo_bundle_id" IS NULL
       `;
     }
 

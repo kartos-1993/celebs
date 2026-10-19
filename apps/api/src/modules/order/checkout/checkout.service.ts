@@ -37,6 +37,7 @@ import { PLATFORM_VENDOR_ID } from '@/common/constants/platform-vendor';
 import { resolveCallbackBase } from '@/common/utils/callback-base';
 import { config } from '@/config/app.config';
 import { Prisma } from '@/config/db.prisma';
+import { resolveCartLineUnitPrice } from '@/modules/cart/cart-line-price';
 import { commissionService } from '@/modules/finance/commission/commission.service';
 import {
   postOrderCommissionEntries,
@@ -183,24 +184,20 @@ export class CheckoutService {
         );
       }
 
-      // Decimal from the column to the line total, with no JS number in the
+      // The line's unit price comes from the single line-price authority —
+      // the same rule CartService.getCart renders — so the figure the shopper
+      // saw in the cart is the figure charged here, combo discounts included.
+      //
+      // Decimals from the columns to the line total, with no JS number in the
       // middle. Converting the price to a number first would put a binary float
       // into the one calculation a seller is later paid from; the round trip
       // usually survives for 2dp values today, which is exactly why it is worth
       // removing.
-      //
-      // Null-safe on undefined as well as null, because a discount is optional
-      // and its absence has to read as "no discount" rather than throw. The
-      // Decimal constructor also accepts a value that is already a Decimal, so
-      // the wrap is a no-op on the real Prisma path.
-      const selectedPrice =
-        product.discountedPrice !== null &&
-        product.discountedPrice !== undefined &&
-        product.discountedPrice.gt(0)
-          ? product.discountedPrice
-          : product.price;
-
-      const unitPriceDecimal = new Prisma.Decimal(selectedPrice);
+      const unitPriceDecimal = resolveCartLineUnitPrice({
+        price: product.price,
+        discountedPrice: product.discountedPrice,
+        appliedDiscount: item.appliedDiscount,
+      });
       const lineSubtotalDecimal = unitPriceDecimal.mul(item.quantity);
       subtotalDecimal = subtotalDecimal.add(lineSubtotalDecimal);
 

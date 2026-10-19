@@ -27,6 +27,9 @@ function item(overrides: Partial<CartItemHydrated> = {}): CartItemHydrated {
     productSlug: 'tee',
     price: 1000,
     discountedPrice: 800,
+    // The server-priced per-unit figure for those product facts.
+    unitPrice: 800,
+    appliedDiscount: 0,
     colorVariantName: 'Red',
     colorCode: '#f00',
     image: 'img',

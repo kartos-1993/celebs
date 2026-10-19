@@ -18,6 +18,13 @@ const CART_QUERIES_SRC = readFileSync(
 );
 
 function item(overrides: Partial<CartItemHydrated> = {}): CartItemHydrated {
+  const price = overrides.price ?? 1000;
+  const overriddenDiscount = overrides.discountedPrice;
+  const discountedPrice =
+    overriddenDiscount !== undefined && overriddenDiscount > 0 && overriddenDiscount < price
+      ? overriddenDiscount
+      : undefined;
+
   return {
     id: 'i1',
     cartId: 'c1',
@@ -25,7 +32,13 @@ function item(overrides: Partial<CartItemHydrated> = {}): CartItemHydrated {
     productId: 'p1',
     productName: 'Tee',
     productSlug: 'tee',
-    price: 1000,
+    price,
+    discountedPrice,
+    // Mirrors what the server's line-price authority would send for the
+    // overridden product facts; tests for combo lines override `unitPrice`
+    // and `appliedDiscount` directly.
+    unitPrice: discountedPrice ?? price,
+    appliedDiscount: 0,
     colorVariantName: 'Red',
     colorCode: '#f00',
     image: 'img',
@@ -40,12 +53,11 @@ function item(overrides: Partial<CartItemHydrated> = {}): CartItemHydrated {
 }
 
 describe('cart selectors', () => {
-  it('getUnitPrice validates the discount through the shared choke point', () => {
+  it("getUnitPrice returns the server's charged unit figure as-is", () => {
     expect(getUnitPrice(item({ price: 1000, discountedPrice: 800 }))).toBe(800);
-    // 1500 on a 1000 list is not a deal: the list price wins.
-    expect(getUnitPrice(item({ price: 1000, discountedPrice: 1500 }))).toBe(1000);
     expect(getUnitPrice(item({ price: 1000 }))).toBe(1000);
-    expect(getUnitPrice(item({ price: 1000, discountedPrice: 0 }))).toBe(1000);
+    // A combo line is charged below its effective base by the server.
+    expect(getUnitPrice(item({ price: 1000, unitPrice: 900, appliedDiscount: 100 }))).toBe(900);
   });
 
   it('getDiscountPercent validates (0 when discount >= price or price <= 0)', () => {
@@ -55,13 +67,24 @@ describe('cart selectors', () => {
     expect(getDiscountPercent(item({ price: 1000 }))).toBe(0);
   });
 
-  it('computeTotals uses the validated unit price; savings clamped at 0', () => {
+  it('computeTotals uses the server-priced unit figure; savings clamped at 0', () => {
     expect(computeTotals([item({ price: 1000, discountedPrice: 800, quantity: 2 })])).toEqual({
       count: 2,
       total: 1600,
       originalTotal: 2000,
       savings: 400,
       savingsPercent: 20,
+    });
+    // A combo line's savings include the bundle discount: both sides of the
+    // comparison come from the figures the server priced.
+    expect(
+      computeTotals([item({ price: 1000, unitPrice: 900, appliedDiscount: 100, quantity: 1 })]),
+    ).toEqual({
+      count: 1,
+      total: 900,
+      originalTotal: 1000,
+      savings: 100,
+      savingsPercent: 10,
     });
     // An invalid discount can no longer inflate the total above the list price.
     expect(computeTotals([item({ price: 1000, discountedPrice: 1500, quantity: 1 })])).toEqual({

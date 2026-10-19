@@ -45,6 +45,8 @@ function line(overrides: Partial<CartItemHydrated> = {}): CartItemHydrated {
     productName: 'Cotton Mug',
     productSlug: 'cotton-mug',
     price: 1000,
+    unitPrice: 1000,
+    appliedDiscount: 0,
     colorVariantName: '',
     colorCode: '',
     image: '',
