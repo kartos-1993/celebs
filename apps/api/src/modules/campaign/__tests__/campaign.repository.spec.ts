@@ -19,7 +19,6 @@ const createMockProduct = (overrides: Partial<Product> = {}): Product =>
     status: 'published',
     featured: false,
     mainImages: [],
-    tags: [],
     sizes: null,
     colorVariants: null,
     skus: null,

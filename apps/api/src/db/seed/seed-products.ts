@@ -72,7 +72,6 @@ export interface SeedProductItem {
   price: number;
   discountedPrice: number;
   featured?: boolean;
-  tags: string[];
   skuPrefix: string;
   stockPerSize: number;
   attributes: Record<string, unknown>;
@@ -195,7 +194,6 @@ export function buildSeedProductPayload(
       variants: { colorMeta },
       uploadedAssets: { mainImages: coverImages, colorMeta },
     },
-    tags: item.tags,
     featured: Boolean(item.featured),
     status: PRODUCT_STATUS.PUBLISHED,
     packageWeightKg: item.packaging?.weightKg ?? 0.5,

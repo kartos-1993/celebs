@@ -14,7 +14,6 @@ const validCreateBody = {
   skus: [],
   variantOptions: [],
   mainImages: [],
-  tags: [],
 } as never;
 
 const makeRes = () => {

@@ -251,7 +251,6 @@ describe('Category RBAC & Tree Operations', () => {
           categoryId: parentCatId,
           subcategoryId: childCatId,
           mainImages: ['test.jpg'],
-          tags: [],
           featured: false,
           status: 'published',
           createdBy: 'test-user',

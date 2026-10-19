@@ -45,7 +45,6 @@ const draftProduct = {
   variantOptions: [],
   mainImages: [],
   dynamicData: {},
-  tags: [],
   featured: false,
   reviewHistory: [],
 } as never;

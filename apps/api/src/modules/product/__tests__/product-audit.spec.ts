@@ -25,7 +25,6 @@ function makeSnapshot(overrides: Partial<AuditedProductSnapshot> = {}): AuditedP
     variantOptions: [],
     mainImages: [],
     dynamicData: {},
-    tags: [],
     featured: false,
     status: 'draft',
     ...overrides,

@@ -49,7 +49,6 @@ export const AUDITED_PRODUCT_FIELDS = [
   'variantOptions',
   'mainImages',
   'dynamicData',
-  'tags',
   'featured',
   'status',
 ] as const satisfies readonly (keyof Product & keyof CreateProductType)[];

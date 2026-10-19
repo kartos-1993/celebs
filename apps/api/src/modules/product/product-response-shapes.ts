@@ -515,9 +515,6 @@ export function formatAdminDetail(formatted: Record<string, unknown>): AdminProd
       formatted.dynamicData && typeof formatted.dynamicData === 'object'
         ? (formatted.dynamicData as Record<string, unknown>)
         : undefined,
-    tags: Array.isArray(formatted.tags)
-      ? formatted.tags.filter((t): t is string => typeof t === 'string')
-      : undefined,
     featured: typeof formatted.featured === 'boolean' ? formatted.featured : undefined,
     status: str(formatted.status, 'DRAFT'),
     vendorId: nullStr(formatted.vendorId),

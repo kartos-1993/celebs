@@ -11,7 +11,6 @@ const BATCH_ITEM: BatchItem = {
   brand: 'Manfinity',
   vendor: 'Brothers Collection',
   subcategorySlug: 'men-hoodies',
-  tags: ['men-hoodies', 'apparel'],
   sizes: [
     {
       name: 'XS',
@@ -66,7 +65,6 @@ const DATASET_ITEM: SeedProductItem = {
   description: 'Existing.',
   price: 1000,
   discountedPrice: 900,
-  tags: [],
   skuPrefix: 'BRO-HOO',
   stockPerSize: 20,
   attributes: {},

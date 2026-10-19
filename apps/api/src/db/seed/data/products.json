@@ -8,7 +8,6 @@
     "price": 2800,
     "discountedPrice": 2380,
     "featured": true,
-    "tags": ["denim", "jacket", "outerwear", "men", "winter"],
     "skuPrefix": "CEL-JKT",
     "stockPerSize": 25,
     "attributes": {
@@ -90,7 +89,6 @@
     "price": 3000,
     "discountedPrice": 2550,
     "featured": false,
-    "tags": ["denim", "jacket", "outerwear", "men", "winter"],
     "skuPrefix": "CEL-JKT",
     "stockPerSize": 25,
     "attributes": {
@@ -156,7 +154,6 @@
     "price": 3200,
     "discountedPrice": 2720,
     "featured": false,
-    "tags": ["denim", "jacket", "outerwear", "men", "winter"],
     "skuPrefix": "CEL-JKT",
     "stockPerSize": 25,
     "attributes": {
@@ -215,7 +212,6 @@
     "price": 2400,
     "discountedPrice": 2112,
     "featured": true,
-    "tags": ["denim", "jeans", "bottoms", "men", "streetwear"],
     "skuPrefix": "CEL-JNS",
     "stockPerSize": 30,
     "attributes": {
@@ -366,7 +362,6 @@
     "price": 2510,
     "discountedPrice": 2209,
     "featured": true,
-    "tags": ["denim", "jeans", "bottoms", "men", "streetwear"],
     "skuPrefix": "CEL-JNS",
     "stockPerSize": 30,
     "attributes": {
@@ -521,7 +516,6 @@
     "price": 2620,
     "discountedPrice": 2306,
     "featured": true,
-    "tags": ["denim", "jeans", "bottoms", "men", "streetwear"],
     "skuPrefix": "CEL-JNS",
     "stockPerSize": 30,
     "attributes": {
@@ -742,7 +736,6 @@
     "price": 2730,
     "discountedPrice": 2402,
     "featured": true,
-    "tags": ["denim", "jeans", "bottoms", "men", "streetwear"],
     "skuPrefix": "CEL-JNS",
     "stockPerSize": 30,
     "attributes": {
@@ -854,7 +847,6 @@
     "price": 2840,
     "discountedPrice": 2499,
     "featured": true,
-    "tags": ["denim", "jeans", "bottoms", "men", "streetwear"],
     "skuPrefix": "CEL-JNS",
     "stockPerSize": 30,
     "attributes": {
@@ -934,7 +926,6 @@
     "price": 2950,
     "discountedPrice": 2596,
     "featured": false,
-    "tags": ["denim", "jeans", "bottoms", "men", "streetwear"],
     "skuPrefix": "CEL-JNS",
     "stockPerSize": 30,
     "attributes": {
@@ -1015,7 +1006,6 @@
     "price": 3060,
     "discountedPrice": 2693,
     "featured": false,
-    "tags": ["denim", "jeans", "bottoms", "men", "streetwear"],
     "skuPrefix": "CEL-JNS",
     "stockPerSize": 30,
     "attributes": {
@@ -1296,7 +1286,6 @@
     "price": 3170,
     "discountedPrice": 2790,
     "featured": false,
-    "tags": ["denim", "jeans", "bottoms", "men", "streetwear"],
     "skuPrefix": "CEL-JNS",
     "stockPerSize": 30,
     "attributes": {
@@ -1394,7 +1383,6 @@
     "price": 3280,
     "discountedPrice": 2886,
     "featured": false,
-    "tags": ["denim", "jeans", "bottoms", "men", "streetwear"],
     "skuPrefix": "CEL-JNS",
     "stockPerSize": 30,
     "attributes": {
@@ -1481,7 +1469,6 @@
     "price": 3390,
     "discountedPrice": 2983,
     "featured": false,
-    "tags": ["denim", "jeans", "bottoms", "men", "streetwear"],
     "skuPrefix": "CEL-JNS",
     "stockPerSize": 30,
     "attributes": {
@@ -1629,7 +1616,6 @@
     "price": 3500,
     "discountedPrice": 3080,
     "featured": false,
-    "tags": ["denim", "jeans", "bottoms", "men", "streetwear"],
     "skuPrefix": "CEL-JNS",
     "stockPerSize": 30,
     "attributes": {
@@ -1703,7 +1689,6 @@
     "price": 3610,
     "discountedPrice": 3177,
     "featured": false,
-    "tags": ["denim", "jeans", "bottoms", "men", "streetwear"],
     "skuPrefix": "CEL-JNS",
     "stockPerSize": 30,
     "attributes": {
@@ -1916,7 +1901,6 @@
     "price": 3720,
     "discountedPrice": 3274,
     "featured": false,
-    "tags": ["denim", "jeans", "bottoms", "men", "streetwear"],
     "skuPrefix": "CEL-JNS",
     "stockPerSize": 30,
     "attributes": {
@@ -2025,7 +2009,6 @@
     "price": 3830,
     "discountedPrice": 3370,
     "featured": false,
-    "tags": ["denim", "jeans", "bottoms", "men", "streetwear"],
     "skuPrefix": "CEL-JNS",
     "stockPerSize": 30,
     "attributes": {
@@ -2104,7 +2087,6 @@
     "price": 2440,
     "discountedPrice": 2147,
     "featured": false,
-    "tags": ["denim", "jeans", "bottoms", "men", "streetwear"],
     "skuPrefix": "CEL-JNS",
     "stockPerSize": 30,
     "attributes": {
@@ -2231,7 +2213,6 @@
     "price": 2550,
     "discountedPrice": 2244,
     "featured": false,
-    "tags": ["denim", "jeans", "bottoms", "men", "streetwear"],
     "skuPrefix": "CEL-JNS",
     "stockPerSize": 30,
     "attributes": {
@@ -2331,7 +2312,6 @@
     "price": 2660,
     "discountedPrice": 2341,
     "featured": false,
-    "tags": ["denim", "jeans", "bottoms", "men", "streetwear"],
     "skuPrefix": "CEL-JNS",
     "stockPerSize": 30,
     "attributes": {
@@ -2494,7 +2474,6 @@
     "price": 2880,
     "discountedPrice": 2534,
     "featured": false,
-    "tags": ["denim", "jeans", "bottoms", "men", "streetwear"],
     "skuPrefix": "CEL-JNS",
     "stockPerSize": 30,
     "attributes": {
@@ -2666,7 +2645,6 @@
     "price": 2990,
     "discountedPrice": 2631,
     "featured": false,
-    "tags": ["denim", "jeans", "bottoms", "men", "streetwear"],
     "skuPrefix": "CEL-JNS",
     "stockPerSize": 30,
     "attributes": {
@@ -2861,7 +2839,6 @@
     "price": 4080,
     "discountedPrice": 3460,
     "featured": true,
-    "tags": ["jackets", "outerwear", "men"],
     "skuPrefix": "BRO-JKT",
     "stockPerSize": 30,
     "attributes": {
@@ -3022,7 +2999,6 @@
     "price": 5130,
     "discountedPrice": 4350,
     "featured": true,
-    "tags": ["jackets", "outerwear", "men"],
     "skuPrefix": "BRO-JKT",
     "stockPerSize": 30,
     "attributes": {
@@ -3099,7 +3075,6 @@
     "price": 5060,
     "discountedPrice": 4290,
     "featured": true,
-    "tags": ["jackets", "outerwear", "men"],
     "skuPrefix": "BRO-JKT",
     "stockPerSize": 30,
     "attributes": {
@@ -3183,7 +3158,6 @@
     "price": 6200,
     "discountedPrice": 5250,
     "featured": false,
-    "tags": ["men-jackets-and-coats", "men-outerwear", "apparel", "generic-unbranded"],
     "skuPrefix": "BRO-JKT",
     "stockPerSize": 20,
     "attributes": {
@@ -3297,7 +3271,6 @@
     "price": 8590,
     "discountedPrice": 7280,
     "featured": false,
-    "tags": ["jackets", "outerwear", "men"],
     "skuPrefix": "BRO-JKT",
     "stockPerSize": 30,
     "attributes": {
@@ -3365,7 +3338,6 @@
     "price": 6290,
     "discountedPrice": 5330,
     "featured": false,
-    "tags": ["jackets", "outerwear", "men"],
     "skuPrefix": "BRO-JKT",
     "stockPerSize": 30,
     "attributes": {
@@ -3483,7 +3455,6 @@
     "price": 8660,
     "discountedPrice": 7340,
     "featured": false,
-    "tags": ["jackets", "outerwear", "men"],
     "skuPrefix": "BRO-JKT",
     "stockPerSize": 30,
     "attributes": {
@@ -3578,7 +3549,6 @@
     "price": 4970,
     "discountedPrice": 4210,
     "featured": false,
-    "tags": ["jackets", "outerwear", "men"],
     "skuPrefix": "BRO-JKT",
     "stockPerSize": 30,
     "attributes": {
@@ -3673,7 +3643,6 @@
     "price": 6630,
     "discountedPrice": 5620,
     "featured": false,
-    "tags": ["jackets", "outerwear", "men"],
     "skuPrefix": "BRO-JKT",
     "stockPerSize": 30,
     "attributes": {
@@ -3727,7 +3696,6 @@
     "price": 5290,
     "discountedPrice": 4480,
     "featured": false,
-    "tags": ["jackets", "outerwear", "men"],
     "skuPrefix": "BRO-JKT",
     "stockPerSize": 30,
     "attributes": {
@@ -3795,7 +3763,6 @@
     "price": 3200,
     "discountedPrice": 2890,
     "featured": false,
-    "tags": ["demo"],
     "skuPrefix": "CEL-DEM",
     "stockPerSize": 12,
     "attributes": {},
@@ -3832,7 +3799,6 @@
     "price": 1800,
     "discountedPrice": 1550,
     "featured": false,
-    "tags": ["demo"],
     "skuPrefix": "CEL-DEM",
     "stockPerSize": 15,
     "attributes": {},
@@ -3866,7 +3832,6 @@
     "price": 3040,
     "discountedPrice": 2580,
     "featured": false,
-    "tags": ["men-hoodies", "men-hoodies-sweatshirts", "apparel", "manfinity"],
     "skuPrefix": "BRO-HOO",
     "stockPerSize": 20,
     "attributes": {
@@ -4141,7 +4106,6 @@
     "price": 4650,
     "discountedPrice": 3940,
     "featured": false,
-    "tags": ["men-hoodies", "men-hoodies-sweatshirts", "apparel", "generic-unbranded"],
     "skuPrefix": "BRO-HOO",
     "stockPerSize": 20,
     "attributes": {

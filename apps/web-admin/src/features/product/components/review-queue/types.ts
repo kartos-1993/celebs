@@ -73,7 +73,6 @@ export interface ProductQueueItem {
   colorVariants?: ColorVariantItem[];
   mainImages?: string[];
   dynamicData?: Record<string, unknown>;
-  tags?: string[];
   featured?: boolean;
   status: 'draft' | 'pending_review' | 'published' | 'rejected' | 'deactivated' | 'archived';
   vendorId?: string;

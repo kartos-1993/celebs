@@ -137,7 +137,6 @@ export interface AdminProductDetail {
   skus?: unknown[];
   variantOptions?: unknown[];
   dynamicData?: Record<string, unknown>;
-  tags?: string[];
   featured?: boolean;
   status: ProductStatus | string;
   vendorId?: string | null;

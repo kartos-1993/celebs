@@ -57,7 +57,6 @@ export interface BatchItem {
   vendorName?: string;
   subcategorySlug?: string;
   categorySlug?: string;
-  tags?: string[];
   sizes?: BatchSize[];
   variants?: BatchVariant[];
   colorVariants?: BatchColorVariant[];
@@ -220,7 +219,6 @@ export function toCanonicalItem(raw: BatchItem): SeedProductItem {
     price: raw.price,
     discountedPrice: raw.discountedPrice ?? raw.price,
     featured: false,
-    tags: raw.tags ?? [],
     skuPrefix: SKU_PREFIXES_BY_CATEGORY[categorySlug] ?? DEFAULT_SKU_PREFIX,
     stockPerSize:
       raw.skus?.[0]?.quantity ??

@@ -136,7 +136,6 @@ export const PRODUCT_PUBLIC_DETAIL_SELECT = {
   skus: true,
   variantOptions: true,
   dynamicData: true,
-  tags: true,
   packageWeightKg: true,
   packageLengthCm: true,
   packageWidthCm: true,

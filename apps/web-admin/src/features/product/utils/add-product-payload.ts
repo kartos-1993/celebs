@@ -840,13 +840,9 @@ export async function buildProductPayload({
         colorMeta: canonicalColorMeta,
       },
     },
-    // No tags/featured input exists anywhere under features/product (grep
-    // evidence: the only hits were this file, the barcode modal, and the review
-    // queue types). So create takes the schema defaults and any value a draft
-    // happens to carry, while update OMITS both keys — `buildProductUpdateData`
-    // guards on `!== undefined`, so omitting keeps the stored tags/featured
-    // instead of resetting them to [] / false on every save.
-    ...(isUpdate ? {} : { tags: toStringArray(values.tags), featured: values.featured === true }),
+    // `featured` has no form input; create carries the provided/default value,
+    // while update omits the key so a stored true survives saves.
+    ...(isUpdate ? {} : { featured: values.featured === true }),
     skus: builtSkus,
     variantOptions: builtVariantOptions,
     status,

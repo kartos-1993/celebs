@@ -56,7 +56,6 @@ export function buildProductCreateData(
     variantOptions: toJsonInput(input.variantOptions) ?? [],
     mainImages: input.mainImages ?? [],
     dynamicData: toJsonInput(input.dynamicData) ?? {},
-    tags: input.tags ?? [],
     featured: input.featured ?? false,
     status: input.status ?? PRODUCT_STATUS.DRAFT,
     vendorId: opts.vendorId || undefined,
@@ -125,7 +124,6 @@ export function buildProductUpdateData(
     ...(updateData.dynamicData !== undefined
       ? { dynamicData: toJsonInput(updateData.dynamicData) }
       : {}),
-    ...(updateData.tags !== undefined ? { tags: updateData.tags } : {}),
     ...(updateData.featured !== undefined ? { featured: updateData.featured } : {}),
     ...(updateData.status ? { status: updateData.status } : {}),
     ...pickDefined(updateData, [

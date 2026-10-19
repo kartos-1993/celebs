@@ -20,7 +20,6 @@ const baseCreateInput: Parameters<typeof buildProductCreateData>[0] = {
   variantOptions: [],
   mainImages: [],
   dynamicData: {},
-  tags: ['denim'],
   featured: false,
   status: 'draft',
 } as never;
@@ -184,7 +183,7 @@ describe('product payload builders', () => {
     });
 
     it('always rewrites category/subcategory/slug/updatedBy; audit entry only with changes', () => {
-      const data = buildProductUpdateData(fakeProduct, { tags: ['x'] } as never, updateOpts);
+      const data = buildProductUpdateData(fakeProduct, { featured: true } as never, updateOpts);
       expect(data).toMatchObject({
         categoryId: 'cat-1',
         subcategoryId: 'sub-1',
@@ -193,9 +192,9 @@ describe('product payload builders', () => {
       });
       expect(data).not.toHaveProperty('reviewHistory');
 
-      const withAudit = buildProductUpdateData(fakeProduct, { tags: ['x'] } as never, {
+      const withAudit = buildProductUpdateData(fakeProduct, { featured: true } as never, {
         ...updateOpts,
-        auditChanges: [{ field: 'tags', from: '[]', to: '["x"]' }],
+        auditChanges: [{ field: 'featured', from: 'false', to: 'true' }],
       });
       expect(withAudit).toHaveProperty('reviewHistory');
     });

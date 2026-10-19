@@ -541,8 +541,8 @@ describe('defaultSkuPath identity', () => {
   });
 });
 
-describe('buildProductPayload tags/featured', () => {
-  it('sends schema defaults on create (no tags/featured inputs exist in the form)', async () => {
+describe('buildProductPayload featured', () => {
+  it('sends featured on create (no form input exists)', async () => {
     const payload = await buildProductPayload({
       fields: baseFields,
       status: 'draft',
@@ -552,7 +552,6 @@ describe('buildProductPayload tags/featured', () => {
         categoryId: 'c1',
         subcategoryId: 's1',
         price: 1000,
-        tags: ['sale'],
         featured: true,
         'sku.default.price': '1000',
         'sku.default.stock': '5',
@@ -560,14 +559,12 @@ describe('buildProductPayload tags/featured', () => {
       },
       upload: mockUpload,
     });
-    // fix (evidence: no tags/featured inputs exist anywhere under
-    // features/product): create carries provided values falling back to the
-    // schema defaults ([] / false).
-    expect(payload.tags).toEqual(['sale']);
+    // `featured` has no form input; create carries the provided value.
+    expect(payload).not.toHaveProperty('tags');
     expect(payload.featured).toBe(true);
   });
 
-  it('omits tags/featured keys on update so stored values persist', async () => {
+  it('omits featured on update so a stored value persists', async () => {
     const payload = await buildProductPayload({
       fields: baseFields,
       status: 'draft',
@@ -577,7 +574,6 @@ describe('buildProductPayload tags/featured', () => {
         categoryId: 'c1',
         subcategoryId: 's1',
         price: 1000,
-        tags: ['sale'],
         featured: true,
         'sku.default.price': '1000',
         'sku.default.stock': '5',
@@ -586,9 +582,7 @@ describe('buildProductPayload tags/featured', () => {
       upload: mockUpload,
       isUpdate: true,
     });
-    // The API only overwrites tags/featured when the keys are present
-    // (buildProductUpdateData guards on !== undefined), so omitting them
-    // keeps previously stored values instead of resetting to [] / false.
+    // Update omits featured so a stored true survives saves.
     expect(payload).not.toHaveProperty('tags');
     expect(payload).not.toHaveProperty('featured');
   });

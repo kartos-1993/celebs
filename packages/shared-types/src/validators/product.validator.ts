@@ -151,7 +151,6 @@ const baseProductSchemaFields = {
   variantOptions: z.array(variantOptionSchema).optional().default([]),
   mainImages: z.array(z.string().url('Image must be a valid URL')).optional().default([]),
   dynamicData: z.record(z.unknown()).optional().default({}),
-  tags: z.array(z.string()).optional().default([]),
   featured: z.boolean().optional().default(false),
   status: z
     .enum(['draft', 'pending_review', 'published', 'rejected', 'deactivated', 'archived'])

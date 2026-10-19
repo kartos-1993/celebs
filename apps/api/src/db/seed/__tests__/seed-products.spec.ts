@@ -23,7 +23,6 @@ const ITEM: SeedProductItem = {
   price: 2800,
   discountedPrice: 2380,
   featured: true,
-  tags: ['denim', 'jacket'],
   skuPrefix: 'CEL-JKT',
   stockPerSize: 25,
   attributes: { 'Fit Type': 'Regular Fit', 'Body / Lining': 'Fleece Lined' },
@@ -105,7 +104,7 @@ describe('buildSeedProductPayload', () => {
     expect(payload.discountedPrice).toBe(2380);
     expect(payload.featured).toBe(true);
     expect(payload.status).toBe('published');
-    expect(payload.tags).toEqual(['denim', 'jacket']);
+    expect(payload).not.toHaveProperty('tags');
     expect(payload.variantOptions).toEqual([
       { name: 'Color', values: ['Blue', 'Black'] },
       { name: 'Size', values: ['S', 'M'] },
