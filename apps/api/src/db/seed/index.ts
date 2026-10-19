@@ -3,7 +3,9 @@ import prisma from '../../config/db.prisma';
 import { connectDb, disconnectDb } from './config';
 import { purgeAllTestData } from './purge-catalog';
 import { seedBrands } from './seed-brands';
+import { seedCampaigns } from './seed-campaigns';
 import { seedCategoriesJewelry } from './seed-categories-jewelry';
+import { seedCombos } from './seed-combos';
 import { seedCommerceSettings } from './seed-commerce-settings';
 import { seedLogisticsLocations } from './seed-logistics-locations';
 import { seedCategoriesMen } from './seed-categories-men';
@@ -58,6 +60,12 @@ export async function runMasterSeed(): Promise<void> {
 
     // Step 5: Storefront Shortcuts
     await seedStorefrontShortcuts(isReset);
+
+    // Step 6: Festival Campaigns (references the catalogue by product name)
+    await seedCampaigns();
+
+    // Step 7: Curated Combo Bundles
+    await seedCombos();
 
     console.log('\n================================================================');
     console.log('✨ MASTER SEED COMPLETED SUCCESSFULLY!');

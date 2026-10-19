@@ -131,3 +131,57 @@ above in case it needs recreating.
   `Campaign > 0`, `ComboBundle > 0`; re-run leaves counts unchanged; stray product
   removed.
 - No API/route changes; Phase 4 mobile UI consumes these rows later.
+
+## Execution log (2026-10-19)
+
+### RED first
+
+`seed-campaigns-combos.spec.ts` against stubbed runners (authored data + pure
+builders present; `seedCampaigns` / `seedCombos` throwing "not implemented"):
+
+- 3/3 pure guards green from the start (dataset references, slug/discount sanity,
+  campaign windows) — they guard authored data, not behavior.
+- 3/3 behavioral tests failed on the missing DB path: `seedCampaigns is not
+implemented yet.` (idempotency, reset path, and the missing-reference test —
+  the last showed the stub message instead of the product-naming error).
+
+### Fix
+
+- `seed-campaigns.ts` / `seed-combos.ts`: authored specs + pure builders
+  (`buildCampaignRow(s)`) + idempotent runners — Campaign upsert by slug,
+  `campaignProduct` upsert by `[campaignId, productId]`; ComboBundle upsert by
+  slug, items replaced wholesale (cart lines reference the bundle, never its item
+  rows). Each runner has a `require.main` entrypoint like the other seeds.
+- `seed-catalog-refs.ts`: `resolveProductsByNames` (one query; fails loud with
+  every missing/unpublished name) + `requireResolvedProduct`.
+- `purge-catalog.ts`: deletes the `comboBundle` / `campaign` **parents** after
+  their children — a reset no longer leaves child-less husks.
+- `index.ts` Steps 6/7 (after products, so references resolve) +
+  `seed:campaigns` / `seed:combos` scripts.
+
+### GREEN
+
+- New spec **6/6**; whole `src/db/seed/__tests__` **49/50** (9 files) — the one red
+  is the known pre-existing `seed-logistics-locations.spec.ts` case.
+- `apps/api` app tsc **0**; spec tsc **37** (baseline — an intermediate run caught
+  four strict-index accesses in the new spec at 41; fixed with a `seedSpecAt`
+  guard, no non-null assertions).
+- Live dev DB: stray product deleted (refs re-checked in-script: 0 cart / 0 order)
+  → published **36 == dataset**; `npm run seed:campaigns` + `seed:combos` resolved
+  every authored name against the real catalogue; **counts identical after the
+  second run** (campaigns 2 / links 14 / combos 4 / items 8 / published 36); both
+  campaigns verifiably open at run time; all four bundles active with the intended
+  discount branches (25% / 20% / FIXED 400 / 15%).
+
+### Notes
+
+- **Deviation from C10's wording** (Design): "resolve products by slug" is not
+  possible — `generateUniqueSlug` salts every slug at insert time. The stable
+  authorable key is the dataset's unique `name` (what `seedProducts` is idempotent
+  on); campaign/combo rows themselves upsert by their own unique slugs.
+- **Deviation from the runbook sample**: warn-and-skip on missing products became
+  one fail-loud error naming every absent product — a campaign that silently
+  drops its content is worse than a failed seed.
+- Runbook schema drifts corrected in-flight (`Campaign.description` /
+  `displayPriority`, `CampaignProduct.discountOverride` / `sortOrder`,
+  `ComboBundleItem.quantity` / `comboBundleId` / `sortOrder` do not exist).

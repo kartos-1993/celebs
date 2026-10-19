@@ -46,6 +46,10 @@ export async function purgeAllTestData(): Promise<void> {
   await prisma.wishlistItem.deleteMany({});
   await prisma.comboBundleItem.deleteMany({});
   await prisma.campaignProduct.deleteMany({});
+  // The parents go too: a reset must not leave slug-renamed, child-less husks
+  // of bundles/campaigns behind. Cart rows are already gone (step 3).
+  await prisma.comboBundle.deleteMany({});
+  await prisma.campaign.deleteMany({});
 
   // 6. Products & Inventories
   console.log('  🗑️  Deleting product inventories and products...');

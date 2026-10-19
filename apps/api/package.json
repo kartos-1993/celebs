@@ -33,6 +33,8 @@
     "sync:pathao-locations:staging": "dotenv -e .env.staging -- node -r tsconfig-paths/register -r @swc-node/register src/scripts/maintenance/sync-pathao-locations.ts",
     "seed:reset": "dotenv -e .env.development -- node -r tsconfig-paths/register -r @swc-node/register src/db/seed/index.ts --reset",
     "seed:brands": "dotenv -e .env.development -- node -r tsconfig-paths/register -r @swc-node/register src/db/seed/seed-brands.ts",
+    "seed:campaigns": "dotenv -e .env.development -- node -r tsconfig-paths/register -r @swc-node/register src/db/seed/seed-campaigns.ts",
+    "seed:combos": "dotenv -e .env.development -- node -r tsconfig-paths/register -r @swc-node/register src/db/seed/seed-combos.ts",
     "seed:staging": "dotenv -e .env.staging -- node -r tsconfig-paths/register -r @swc-node/register src/db/seed/index.ts",
     "seed:staging:reset": "dotenv -e .env.staging -- node -r tsconfig-paths/register -r @swc-node/register src/db/seed/index.ts --reset",
     "seed:option-sets": "dotenv -e .env.development -- node -r tsconfig-paths/register -r @swc-node/register src/db/seed/seed-option-sets.ts",

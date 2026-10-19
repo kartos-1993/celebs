@@ -57,3 +57,58 @@ export async function resolveCategoryBySlug(
 
   return category;
 }
+
+export interface SeedProductRef {
+  id: string;
+  name: string;
+}
+
+/**
+ * Resolve a set of catalogue product names in one query.
+ *
+ * Product slugs are salted (`generateUniqueSlug` appends a time+random
+ * suffix), so the only stable, authorable identifier is the dataset's unique
+ * `name` - the same key `seedProducts` is idempotent on. Every missing (or
+ * unpublished) name is reported in one actionable error: a campaign or combo
+ * referencing an absent product is a silent storefront break, not a warning
+ * to skip.
+ */
+export async function resolveProductsByNames(
+  names: string[],
+): Promise<Map<string, SeedProductRef>> {
+  const products = await prisma.product.findMany({
+    where: { name: { in: names }, status: 'published' },
+    select: { id: true, name: true },
+    orderBy: { createdAt: 'asc' },
+  });
+
+  const byName = new Map<string, SeedProductRef>();
+  for (const product of products) {
+    if (!byName.has(product.name)) byName.set(product.name, product);
+  }
+
+  const missing = names.filter((name) => !byName.has(name));
+  if (missing.length > 0) {
+    throw new Error(
+      `Products referenced by the campaign/combo seeds are missing or unpublished: ${missing.join('; ')}. Run 'npm run seed' first.`,
+    );
+  }
+
+  return byName;
+}
+
+/**
+ * Pins the resolver's guarantee for callers: every authored name resolves, or
+ * `resolveProductsByNames` has already thrown.
+ */
+export function requireResolvedProduct(
+  products: ReadonlyMap<string, SeedProductRef>,
+  name: string,
+): SeedProductRef {
+  const product = products.get(name);
+  if (!product) {
+    throw new Error(`Product '${name}' was not in the resolved seed set.`);
+  }
+
+  return product;
+}
