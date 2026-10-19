@@ -60,3 +60,34 @@ Cleanup note: test 1 seeds a general band (`cityId = null`), which the existing
 - `cart-zone-pricing.spec.ts` 9/9.
 - Cart + combo modules fully green — no known red left in the cart module.
 - Spec-file-only diff.
+
+## Execution log (2026-10-19)
+
+### Rewrites
+
+- Test 1 → `prices from the destination rate card, preferring the district band
+over the general one`: general band `180` + district band `260` on the same
+  weight bracket; the cart shows `260` and neither `180` nor the flat fee.
+- Test 2 → `charges the flat policy fee when no band matches the parcel weight`:
+  an `[8,10)` band against a 4 kg parcel; the cart shows the flat policy fee and
+  not `240`.
+- Comments corrected: the district-test justification and the fixture's
+  courier-sync rationale (verified: `thresholdForAddress` needs only an active
+  zone + active city).
+- Cleanup hardened: rates are tracked by id — the general band (`cityId = null`)
+  is unreachable by the old `cityId IN (...)` delete. (The suite's `beforeEach`
+  truncates every table, so a leak could not reach another test either way; the
+  id-based delete is the belt-and-braces version.)
+
+### GREEN
+
+- `cart-zone-pricing.spec.ts` 9/9.
+- Cart + combo modules: **9 files / 56 tests, all pass** — no known red left in
+  the cart module.
+- Spec `tsc` 37 (baseline set, none in the touched file).
+
+### Notes
+
+- No implementation change: the shipped pricing contract was verified as the
+  intended one (established by `c40a2da5`; confirmed through the resolver and
+  repository reads listed above).

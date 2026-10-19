@@ -24,6 +24,7 @@ const categoryIds: string[] = [];
 const sessionIds: string[] = [];
 const userIds: string[] = [];
 const cityIds: string[] = [];
+const rateIds: string[] = [];
 
 async function seedProduct(price: number, weightKg = 0.5): Promise<string> {
   const category = await prisma.category.create({
@@ -71,9 +72,8 @@ async function seedCustomerWithDefaultAddress(options: {
       province: 'Bagmati',
       isValley: options.isValley,
       freeDeliveryThreshold: options.freeDeliveryThreshold,
-      // Courier-synced, with the ids the courier prices on. A bootstrapped city
-      // has none, and checkout refuses to quote one - so a fixture without them
-      // would describe a cart the system is right to refuse.
+      // An active zone on an active city is what makes this a destination; the
+      // courier-sync fields mirror how production rows arrive.
       source: 'COURIER',
       externalId: Math.floor(Math.random() * 900000) + 100000,
       syncedAt: new Date(),
@@ -111,7 +111,7 @@ async function seedCustomerWithDefaultAddress(options: {
 }
 
 async function seedRate(cityId: string | null, fee: string, min: number, max: number) {
-  await prisma.shippingRate.create({
+  const rate = await prisma.shippingRate.create({
     data: {
       cityId,
       minWeightKg: new Prisma.Decimal(min),
@@ -119,7 +119,9 @@ async function seedRate(cityId: string | null, fee: string, min: number, max: nu
       fee: new Prisma.Decimal(fee),
       codFee: new Prisma.Decimal(0),
     },
+    select: { id: true },
   });
+  rateIds.push(rate.id);
 }
 
 async function cartForUser(userId: string, productId: string, quantity: number) {
@@ -142,7 +144,7 @@ afterAll(async () => {
   await prisma.cartItem.deleteMany({ where: { cart: { userId: { in: userIds } } } });
   await prisma.cart.deleteMany({ where: { userId: { in: userIds } } });
   await prisma.address.deleteMany({ where: { userId: { in: userIds } } });
-  await prisma.shippingRate.deleteMany({ where: { cityId: { in: cityIds } } });
+  await prisma.shippingRate.deleteMany({ where: { id: { in: rateIds } } });
   await prisma.logisticsZone.deleteMany({ where: { cityId: { in: cityIds } } });
   await prisma.logisticsCity.deleteMany({ where: { id: { in: cityIds } } });
   await prisma.product.deleteMany({ where: { id: { in: createdProductIds } } });
@@ -181,20 +183,24 @@ describe('cart quotes against the default address when it can', () => {
     expect(cart.shippingFee).toBe(COMMERCE_POLICY_DEFAULTS.flatShippingFee);
   });
 
-  it('sends the parcel to the courier rather than pricing it from a band', async () => {
-    // A 4 kg parcel and a 500 g one cost the courier different amounts, so the
-    // weight has to reach them. The suite-wide courier stub answers 150 up to 1 kg
-    // and 300 above it, which is enough to prove the weight travelled.
-    const heavy = await seedProduct(1200, 4);
-    const { userId } = await seedCustomerWithDefaultAddress({
+  it('prices from the destination rate card, preferring the district band over the general one', async () => {
+    // The cart is quoted against the customer's own zone, so the band that
+    // prices it is the destination's. A general band may stand behind it, but
+    // the district one answers first.
+    const productId = await seedProduct(1200, 4);
+    const { userId, cityId } = await seedCustomerWithDefaultAddress({
       freeDeliveryThreshold: 2500,
       isValley: true,
     });
+    // Same weight bracket, two prices: only the district band may apply.
+    await seedRate(null, '180', 4, 5);
+    await seedRate(cityId, '260', 4, 5);
 
-    const cart = await cartForUser(userId, heavy, 1);
+    const cart = await cartForUser(userId, productId, 1);
 
-    expect(cart.shippingFee).toBe(300);
-    // Not the platform flat fee, which is what a hand-entered fallback would give.
+    expect(cart.shippingFee).toBe(260);
+    // Not the general band, and not the platform flat fee.
+    expect(cart.shippingFee).not.toBe(180);
     expect(cart.shippingFee).not.toBe(COMMERCE_POLICY_DEFAULTS.flatShippingFee);
   });
 
@@ -209,26 +215,27 @@ describe('cart quotes against the default address when it can', () => {
 
     const cart = await cartForUser(userId, productId, 1);
 
-    // The zone is courier-resolvable in this fixture, so this is the courier's
-    // answer rather than the fallback, which is what proves a district was used.
+    // The fixture's zone resolves (active zone on an active city), so the quote
+    // is against a real destination rather than the conservative fallback.
     expect(cart.deliveryIsEstimate).toBe(false);
   });
 
-  it('does not let a rate band override the courier', async () => {
+  it('charges the flat policy fee when no band matches the parcel weight', async () => {
     const productId = await seedProduct(1200, 4);
     const { userId, cityId } = await seedCustomerWithDefaultAddress({
       freeDeliveryThreshold: 2500,
       isValley: true,
     });
-    // A band that says 240 for this weight, and the courier says 300.
+    // A band covering 8-10 kg, and a 4 kg parcel: it must not price it.
     await seedRate(cityId, '240', 8, 10);
 
     const cart = await cartForUser(userId, productId, 1);
 
-    // Bands are our guess about a courier's pricing. Once the courier answers,
-    // ours is not consulted - a band quietly capping a real cost is how a charge
-    // stops matching the invoice.
-    expect(cart.shippingFee).toBe(300);
+    // A band whose weight does not match must never price the parcel; the
+    // fallback is the platform's flat fee, and pricing the band's 240 would be
+    // quoting a number no rule actually produces.
+    expect(cart.shippingFee).toBe(COMMERCE_POLICY_DEFAULTS.flatShippingFee);
+    expect(cart.shippingFee).not.toBe(240);
     expect(cart.total).toBe(cart.subtotal + cart.shippingFee);
   });
 
