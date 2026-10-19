@@ -124,12 +124,22 @@ describe('StorefrontShortcutRepository & StorefrontShortcutService Clean Archite
         findActiveChildCategories: async () => [],
       };
 
-      const service = new StorefrontShortcutService({ storefrontShortcutRepo: mockRepo });
+      const service = new StorefrontShortcutService({
+        storefrontShortcutRepo: mockRepo,
+        // Unit specs stay off Redis: the cache is exercised end-to-end against
+        // the real one in storefront-shortcut-config.spec.ts.
+        storefrontShortcutCache: {
+          get: async () => null,
+          set: async () => {},
+          invalidate: async () => {},
+        },
+      });
       const result = await service.getStorefrontConfigBySlug('apparel');
 
       expect(result.category.name).toBe('Apparel');
       expect(result.shortcuts.length).toBe(1);
       expect(result.shortcuts[0]?.type).toBe('brand');
+      expect(result.shortcuts[0]?.title).toBe('Brand Filter');
     });
 
     it('should throw AppError when category is not found', async () => {

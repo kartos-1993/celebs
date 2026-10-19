@@ -94,3 +94,51 @@ are covered by the suite's per-test truncation).
 - `apps/api` app `tsc` 0; spec `tsc` at the 37-error baseline (none in touched files).
 - No mobile/web-admin changes required: the payload addition is additive and no
   current consumer reads `title`; admin fields become truthful, not reshaped.
+
+## Execution log (2026-10-19)
+
+### RED first
+
+New `storefront-shortcut-config.spec.ts` failed **4/4** against the untouched
+service:
+
+- `expected [ { …(6) } ] to have a length of +0 but got 1` — a deactivated row rendered.
+- `expected [ undefined, undefined ] to include 'Shop by Brand'` — titles dropped.
+- `expected undefined to be 'Before'` — no cache read path existed.
+- `expected true to be false` — the admin listing reported `isActive: true` for a
+  deactivated row.
+
+### Fix
+
+- `formatFilter` reads `displayOrder` / `isActive` from `filterConfig`. The
+  `displayOrder` line was the identical defect directly above the reviewed
+  `isActive` line and is fixed with it.
+- The public render skips deactivated rows; the stored row still suppresses the
+  no-rows fallback, so a deliberate deactivation is not resurrected.
+- `title: shortcut.title || 'Subcategories'` now travels in the payload.
+- `storefront-shortcut.cache.ts` — key `storefront:shortcuts:${category.slug}`,
+  TTL 300s, shape-validated reads, swallow-with-`logger.warn`; injected through
+  `StorefrontShortcutServiceDeps` so unit specs never touch Redis. Invalidation
+  on create/update/delete (create reuses the category it already resolved).
+- `getStorefrontConfigBySlug` is now resolve → cache-get → `buildStorefrontConfig`
+  → cache-set.
+
+### GREEN
+
+- `storefront-shortcut-config.spec.ts` 4/4; existing repository/DI spec 5/5 (the
+  DI test now injects a no-op cache and asserts the carried title) → module **9/9**.
+- No other spec in `apps/api` references `getStorefrontConfigBySlug` (grep) and
+  `category.routes.ts` is untouched.
+- `apps/api` app `tsc` **0**; spec `tsc` **37** (baseline set; none in touched files).
+- Mobile / web-admin: no code change needed — `title` is additive and no current
+  consumer reads it (the mobile renderer reads `displayAs` / `items`); the admin
+  field names are unchanged, their values become truthful.
+
+### Notes
+
+- **Deviation** from the review's wording (Decision 2): the `isActive` filter is
+  service-level, not a repository JSON-path clause — a JSON `equals: false`
+  condition excludes rows _missing_ the key (three-valued `NULL`), which would
+  invert the default-active semantics the writers rely on.
+- `drawerFilters` stays `[]` (unchanged). The 300s TTL bounds staleness of
+  category renames and edits made outside this API.

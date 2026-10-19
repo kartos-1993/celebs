@@ -1,3 +1,5 @@
+import type { Category } from '@prisma/client';
+
 import {
   type StorefrontShortcutDisplayAs,
   type StorefrontShortcutItem,
@@ -5,6 +7,7 @@ import {
 } from '@celebs/shared-types';
 import { AppError, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
 
+import { type StorefrontShortcutCache, storefrontShortcutCache } from './storefront-shortcut.cache';
 import {
   type StorefrontShortcutRepository,
   storefrontShortcutRepository,
@@ -43,19 +46,45 @@ interface StorefrontShortcutConfig {
   isActive?: boolean;
 }
 
+/** One rendered shortcut row on the storefront: the shape the app consumes. */
+export interface StorefrontConfigShortcut {
+  id: string;
+  title: string;
+  type: string;
+  attributeId: string | null;
+  displayAs: string;
+  displayOrder: number;
+  items: StorefrontShortcutItem[];
+}
+
+export interface StorefrontConfigResponse {
+  category: {
+    id: string;
+    name: string;
+    slug: string;
+    level: number;
+    imageUrl: string | null;
+  };
+  shortcuts: StorefrontConfigShortcut[];
+  drawerFilters: unknown[];
+}
+
 export interface StorefrontShortcutServiceDeps {
   storefrontShortcutRepo?: Partial<StorefrontShortcutRepository>;
+  storefrontShortcutCache?: StorefrontShortcutCache;
 }
 
 export class StorefrontShortcutService {
   private storefrontShortcutRepo: StorefrontShortcutRepository;
+  private storefrontShortcutCache: StorefrontShortcutCache;
 
   constructor(deps: StorefrontShortcutServiceDeps = {}) {
     this.storefrontShortcutRepo = (deps.storefrontShortcutRepo ??
       storefrontShortcutRepository) as StorefrontShortcutRepository;
+    this.storefrontShortcutCache = deps.storefrontShortcutCache ?? storefrontShortcutCache;
   }
 
-  private formatFilter(qf: { id: string; filterConfig?: Prisma.JsonValue } | null) {
+  private formatFilter(qf: { id: string; title?: string; filterConfig?: Prisma.JsonValue } | null) {
     if (!qf) return null;
     const config = (
       qf.filterConfig && typeof qf.filterConfig === 'object' ? qf.filterConfig : {}
@@ -68,18 +97,42 @@ export class StorefrontShortcutService {
       displayAs: config.displayAs || 'avatar_scroll',
       attributeId: config.attributeId || null,
       autoPopulate: config.autoPopulate !== false,
-      displayOrder: (qf as Record<string, unknown>).displayOrder ?? 0,
-      isActive: (qf as Record<string, unknown>).isActive !== false,
+      // `displayOrder` and `isActive` live inside `filterConfig` - there are no
+      // top-level columns for them, and reading the row directly returned the
+      // defaults forever. The config is the only writer's home (create/update/seed).
+      displayOrder: config.displayOrder ?? 0,
+      isActive: config.isActive !== false,
     };
   }
 
-  async getStorefrontConfigBySlug(slugOrId: string) {
+  /**
+   * The cache key is the category slug; an update or delete only holds the
+   * shortcut's category id, so it is resolved once (admin-frequency path, not
+   * request-frequency).
+   */
+  private async invalidateShortcutCacheFor(categoryId: string | null): Promise<void> {
+    if (!categoryId) return;
+
+    const category = await this.storefrontShortcutRepo.findCategoryById(categoryId);
+    if (category) await this.storefrontShortcutCache.invalidate(category.slug);
+  }
+
+  async getStorefrontConfigBySlug(slugOrId: string): Promise<StorefrontConfigResponse> {
     const category = await this.storefrontShortcutRepo.findCategoryBySlugOrId(slugOrId);
 
     if (!category) {
       throw new AppError('Category not found', HTTPSTATUS.NOT_FOUND, ErrorCode.CATEGORY_NOT_FOUND);
     }
 
+    const cached = await this.storefrontShortcutCache.get(category.slug);
+    if (cached) return cached;
+
+    const config = await this.buildStorefrontConfig(category);
+    await this.storefrontShortcutCache.set(category.slug, config);
+    return config;
+  }
+
+  private async buildStorefrontConfig(category: Category): Promise<StorefrontConfigResponse> {
     const categoryId = category.id;
 
     let rawStorefrontShortcuts = await this.storefrontShortcutRepo.findByCategoryId(categoryId);
@@ -129,11 +182,15 @@ export class StorefrontShortcutService {
       ? await this.storefrontShortcutRepo.findActiveChildCategories(categoryId)
       : [];
 
-    const shortcuts = [];
+    const shortcuts: StorefrontConfigShortcut[] = [];
 
     for (const qf of rawStorefrontShortcuts) {
       const formatted = this.formatFilter(qf);
       if (!formatted) continue;
+      // A deactivated shortcut must not render - and because its row exists, it
+      // must not trigger the no-rows fallback either. Deactivation is a
+      // decision, not a gap.
+      if (!formatted.isActive) continue;
       let finalItems = [...(formatted.items || [])];
 
       if (formatted.type === 'subcategory' && formatted.autoPopulate) {
@@ -156,6 +213,7 @@ export class StorefrontShortcutService {
 
       shortcuts.push({
         id: formatted.id,
+        title: formatted.title || 'Subcategories',
         type: formatted.type,
         attributeId: formatted.attributeId,
         displayAs: formatted.displayAs,
@@ -205,6 +263,9 @@ export class StorefrontShortcutService {
       },
     });
 
+    // The category row is already in hand: its slug names the cache key.
+    await this.storefrontShortcutCache.invalidate(category.slug);
+
     return this.formatFilter(created);
   }
 
@@ -233,6 +294,8 @@ export class StorefrontShortcutService {
       ...(input.isActive !== undefined ? { isActive: input.isActive } : {}),
     });
 
+    await this.invalidateShortcutCacheFor(filter.categoryId);
+
     return this.formatFilter(updated);
   }
 
@@ -247,6 +310,9 @@ export class StorefrontShortcutService {
     }
 
     await this.storefrontShortcutRepo.delete(id);
+
+    await this.invalidateShortcutCacheFor(filter.categoryId);
+
     return { success: true };
   }
 }
