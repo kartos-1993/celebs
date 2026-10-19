@@ -6,6 +6,7 @@ import {
   COMBO_QUERY_KEYS,
   getActiveCampaigns,
   getBanners,
+  getCampaignBySlug,
   getCombos,
 } from '../api';
 import type { CampaignData, ComboBundleData } from '../types';
@@ -44,6 +45,22 @@ export function useActiveCampaign() {
   return {
     activeCampaign,
     loading,
+    refetch,
+  };
+}
+
+export function useCampaign(slug: string) {
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: CAMPAIGN_QUERY_KEYS.detail(slug),
+    queryFn: () => getCampaignBySlug(slug),
+    enabled: Boolean(slug),
+    staleTime: 1000 * 60 * 5,
+  });
+
+  return {
+    campaign: data ?? null,
+    loading: isLoading,
+    error: error ? (error instanceof Error ? error.message : 'Failed to load campaign') : null,
     refetch,
   };
 }

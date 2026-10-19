@@ -8,6 +8,8 @@ import { ThemedText } from '@/components/themed-text';
 
 export interface RenderableBundleItem {
   id: string;
+  /** Product id, resolved from the bundle item; the add-to-cart payload needs it. */
+  productId: string;
   name: string;
   originalPrice: number;
   image: string;

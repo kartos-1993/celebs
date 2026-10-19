@@ -8,15 +8,21 @@ import {
   useColorScheme,
 } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'expo-router';
 
 import { AppHeader } from '@/components/app-header';
 import { ThemedView } from '@/components/themed-view';
+import { showToast } from '@/components/toast/toast';
 import { Palette } from '@/constants/theme';
+import { useCart } from '@/features/cart/context/cart-context';
+import { useCartSheet } from '@/features/cart/context/cart-sheet-context';
 import { CATEGORY_QUERY_KEYS } from '@/features/categories/api';
 import { BANNER_QUERY_KEYS, CAMPAIGN_QUERY_KEYS, COMBO_QUERY_KEYS } from '@/features/home/api';
 import { ComboBundleModal } from '@/features/home/components/combo-bundle-modal';
 import { ComboBundleData } from '@/features/home/components/combo-bundle-showcase';
 import { styles } from '@/features/home/styles/home.styles';
+import type { CampaignData, ComboSelectedVariants } from '@/features/home/types';
+import { buildComboCartInput } from '@/features/home/utils/combo-cart-input';
 import { PRODUCT_QUERY_KEYS } from '@/features/products/api';
 import { SDUI_QUERY_KEYS } from '@/features/sdui/api';
 import { DynamicLayout } from '@/features/sdui/components/dynamic-layout';
@@ -27,6 +33,9 @@ export default function HomeScreen() {
   useNavigationGuard();
   const scheme = useColorScheme();
   const queryClient = useQueryClient();
+  const router = useRouter();
+  const { addComboToCart } = useCart();
+  const { openCartSheet } = useCartSheet();
   const [refreshing, setRefreshing] = useState(false);
   const [selectedCombo, setSelectedCombo] = useState<ComboBundleData | null>(null);
   const [isComboModalOpen, setIsComboModalOpen] = useState(false);
@@ -72,12 +81,32 @@ export default function HomeScreen() {
     setIsComboModalOpen(true);
   }, []);
 
+  const handleAddComboToCart = useCallback(
+    async (combo: ComboBundleData, selectedVariants: ComboSelectedVariants) => {
+      try {
+        await addComboToCart(buildComboCartInput(combo, selectedVariants));
+        openCartSheet();
+      } catch (error) {
+        showToast(error instanceof Error ? error.message : 'Could not add this combo to cart');
+      }
+    },
+    [addComboToCart, openCartSheet],
+  );
+
+  const handlePressCampaign = useCallback(
+    (campaign: CampaignData) => {
+      router.push({ pathname: '/campaign/[slug]', params: { slug: campaign.slug } });
+    },
+    [router],
+  );
+
   const sduiHandlers = useMemo(
     () => ({
       onSelectCombo: handleSelectCombo,
+      onPressCampaign: handlePressCampaign,
       loadMoreSignal,
     }),
-    [handleSelectCombo, loadMoreSignal],
+    [handlePressCampaign, handleSelectCombo, loadMoreSignal],
   );
 
   return (
@@ -113,6 +142,7 @@ export default function HomeScreen() {
         visible={isComboModalOpen}
         combo={selectedCombo}
         onClose={() => setIsComboModalOpen(false)}
+        onAddToCart={handleAddComboToCart}
       />
 
       {/* Transparent Floating AppHeader */}

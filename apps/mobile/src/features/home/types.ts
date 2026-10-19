@@ -53,6 +53,9 @@ export interface ComboItemData {
   product?: HydratedProduct;
 }
 
+/** Selection carried out of the modal, keyed by bundle-item id. */
+export type ComboSelectedVariants = Record<string, { size?: string; color?: string }>;
+
 export interface ComboBundleData {
   id: string;
   title: string;

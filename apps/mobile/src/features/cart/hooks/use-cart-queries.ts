@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import type {
+  AddComboToCartInput,
   AddToCartInput,
   CartItemHydrated,
   CartResponse,
@@ -10,6 +11,7 @@ import type {
 import { moneyMultiply, moneySum } from '@celebs/shared-utils';
 
 import {
+  addComboToCartApi,
   addToCartApi,
   CART_QUERY_KEYS,
   clearCartApi,
@@ -126,6 +128,26 @@ export function useAddToCartMutation(sessionId: string | null) {
       if (context?.previousCart) {
         queryClient.setQueryData(queryKey, context.previousCart);
       }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: CART_QUERY_KEYS.all });
+    },
+  });
+}
+
+/**
+ * Combo adds are not optimistically patched: the server allocates the bundle
+ * discount across its lines, so a client-side guess would display prices the
+ * server immediately contradicts. The response replaces the cached cart.
+ */
+export function useAddComboToCartMutation(sessionId: string | null) {
+  const queryClient = useQueryClient();
+  const queryKey = useMemo(() => CART_QUERY_KEYS.detail(sessionId), [sessionId]);
+
+  return useMutation({
+    mutationFn: (input: AddComboToCartInput) => addComboToCartApi(input, sessionId),
+    onSuccess: (serverCart) => {
+      queryClient.setQueryData<CartResponse>(queryKey, serverCart);
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: CART_QUERY_KEYS.all });

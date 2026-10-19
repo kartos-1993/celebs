@@ -8,10 +8,11 @@ import React, {
   useState,
 } from 'react';
 
-import type { AddToCartInput } from '@celebs/shared-types';
+import type { AddComboToCartInput, AddToCartInput } from '@celebs/shared-types';
 
 import { getGuestSessionId } from '../api';
 import {
+  useAddComboToCartMutation,
   useAddToCartMutation,
   useCartQuery,
   useClearCartMutation,
@@ -55,6 +56,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     refetch,
   } = useCartQuery(activeSessionId, { enabled: isQueryEnabled });
   const addToCartMutation = useAddToCartMutation(activeSessionId);
+  const addComboToCartMutation = useAddComboToCartMutation(activeSessionId);
   const updateQuantityMutation = useUpdateCartQuantityMutation(activeSessionId);
   const removeItemMutation = useRemoveCartItemMutation(activeSessionId);
   const clearCartMutation = useClearCartMutation(activeSessionId);
@@ -89,6 +91,13 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       await addToCartMutation.mutateAsync(input);
     },
     [addToCartMutation],
+  );
+
+  const handleAddComboToCart = useCallback(
+    async (input: AddComboToCartInput): Promise<void> => {
+      await addComboToCartMutation.mutateAsync(input);
+    },
+    [addComboToCartMutation],
   );
 
   const handleUpdateQuantity = useCallback(
@@ -131,6 +140,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     selectedSavingsPercent: totals.savingsPercent,
     isAllSelected,
     addToCart: handleAddToCart,
+    addComboToCart: handleAddComboToCart,
     updateQuantity: handleUpdateQuantity,
     removeItem: handleRemoveItem,
     clearCart: handleClearCart,

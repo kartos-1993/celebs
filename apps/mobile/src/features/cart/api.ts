@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import type {
+  AddComboToCartInput,
   AddToCartInput,
   CartResponse,
   IApiResponse,
@@ -84,6 +85,17 @@ export async function addToCartApi(
 ): Promise<CartResponse> {
   return handleApiResponse(
     apiClient.post<IApiResponse<CartResponse>>('/cart/items', input, {
+      headers: buildHeaders(sessionId),
+    }),
+  );
+}
+
+export async function addComboToCartApi(
+  input: AddComboToCartInput,
+  sessionId?: string | null,
+): Promise<CartResponse> {
+  return handleApiResponse(
+    apiClient.post<IApiResponse<CartResponse>>('/cart/combos', input, {
       headers: buildHeaders(sessionId),
     }),
   );

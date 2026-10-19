@@ -36,6 +36,14 @@ export async function getActiveCampaigns(): Promise<CampaignData[]> {
   return Array.isArray(data) ? data : [];
 }
 
+export async function getCampaignBySlug(slug: string): Promise<CampaignData> {
+  return handleApiResponse(
+    apiClient.get<IApiResponse<CampaignData>>(`/campaigns/${encodeURIComponent(slug)}`, {
+      skipAuth: true,
+    }),
+  );
+}
+
 export async function getCombos(tag?: string): Promise<ComboBundleData[]> {
   const params: Record<string, unknown> = {};
   if (tag) params.tag = tag;

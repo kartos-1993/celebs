@@ -142,3 +142,58 @@ colorVariantName, size, quantity? }]`.
 - Full `npm test` (vitest) in `apps/mobile`.
 - `npx tsc --noEmit` in `apps/mobile` — zero errors.
 - No changes under `apps/api` or `packages/*`; no product-card contract change.
+
+## Execution log (2026-10-19)
+
+**Commit 1:** `4521ee33` — this plan.
+**Commit 2:** implementation + tests (see branch history).
+
+### RED → GREEN
+
+- RED: the three new spec files failed to load (`combo-cart-input`, `card-layout`,
+  and the wiring spec whose campaign screen did not exist).
+- GREEN targeted: 35/35 across the 3 new specs plus the 3 existing
+  combo/campaign/filter specs.
+- Full mobile suite: **255/255 tests, 27 files**.
+- `npx tsc --noEmit` (`apps/mobile`): **0 errors**. Route types were regenerated
+  with `npx expo customize tsconfig.json`; `.expo/` is gitignored.
+- ESLint over every touched path: **0 errors**. The only warning is the
+  pre-existing `react-hooks/set-state-in-effect` in
+  `combo-bundle-modal.tsx:41`, whose effect-based seeding is explicitly pinned by
+  `combo-bundle-helpers.spec.ts`; it was not changed.
+
+### Shipped
+
+1. `buildComboCartInput` + `productId` on renderable bundle rows.
+2. `addComboToCartApi` / `useAddComboToCartMutation` / `addComboToCart` in the
+   cart context (guest-session handling stays in one place).
+3. `ComboProductCard` (shared grid width) and the showcase rewired to it; the
+   duplicate wide card was deleted.
+4. Home-screen modal wiring: success opens the cart sheet, incomplete selections
+   toast before any request.
+5. Banner `onPress`, SDUI `onPressCampaign`, and `/campaign/[slug]` registration.
+6. Campaign destination: `GET /campaigns/:slug`, `?campaign=` product list,
+   themed hero, live countdown, back/cart header, loading/empty/error states.
+7. One countdown implementation (`useCountdown`) used by banner and screen.
+
+### Deviations / notes
+
+- **No minimum clamp in `getProductCardWidth`.** The plan mentioned clamping;
+  it was dropped as an arbitrary constant. Both the standard product card and the
+  combo card share the exact two-column formula, so they cannot diverge.
+- **Countdown position.** The live countdown sits at the bottom of the hero,
+  immediately below the header row, rather than inside the header itself. This
+  keeps the campaign title full-width on small screens.
+- **CTA composition.** The card is one press target; "Customize & Add" is a
+  styled surface inside it rather than a nested `TouchableOpacity`. Nested
+  touchables can both fire on some platforms, and the whole card already opens
+  the same modal.
+- **Combo modal close remains fire-and-forget** (existing behaviour). The add
+  runs after close; success opens the cart sheet, failure surfaces a toast.
+- **No optimistic combo cart patch** (documented in the hook): only the server
+  response carries the exact per-line discount allocation.
+- **Live-data check:** all 8 authored combo products are seeded with one colour
+  and `stockPerSize: 12` for every declared size, so the modal's aggregated size
+  list cannot produce a colour/size mismatch for these bundles. The server still
+  rejects mismatches loudly if authored data changes.
+- No API, schema, shared-type, or product-card contract changes. C7 is intact.

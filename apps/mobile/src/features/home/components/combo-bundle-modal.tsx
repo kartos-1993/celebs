@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Modal, ScrollView, TouchableOpacity, View } from 'react-native';
 import { ShoppingBag, Sparkles, Tag, X } from 'lucide-react-native';
 
+import type { ComboSelectedVariants } from '../types';
 import { calculateComboPricing, getComboDisplayItems } from '../utils/combo-bundle-helpers';
 
 import { ComboBundleItemCard } from './combo-bundle-item-card';
@@ -11,8 +12,7 @@ import { ComboBundleData } from './combo-bundle-showcase';
 import { ThemedText } from '@/components/themed-text';
 import { Palette } from '@/constants/theme';
 
-/** Per-item selection carried into add-to-cart: both axes, never just the size. */
-export type ComboSelectedVariants = Record<string, { size?: string; color?: string }>;
+export type { ComboSelectedVariants } from '../types';
 
 interface ComboBundleModalProps {
   visible: boolean;

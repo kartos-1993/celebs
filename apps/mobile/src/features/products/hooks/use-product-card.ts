@@ -15,6 +15,7 @@ import { useRouter } from 'expo-router';
 import { validDiscount } from '@celebs/shared-utils';
 
 import { getProductById, PRODUCT_QUERY_KEYS } from '../api';
+import { getProductCardWidth } from '../utils/card-layout';
 import { resolveMinPrice } from '../utils/pricing';
 import { isProductFullyOutOfStock, isTrackedVariantOutOfStock } from '../utils/stock';
 
@@ -27,9 +28,6 @@ import { useFlyToCart } from '@/features/cart/context/fly-to-cart-context';
 import { useWishlistActions, useWishlistStatus } from '@/features/wishlist/hooks/use-wishlist';
 import { resolveImageUrl } from '@/utils/image';
 import { useNavigationGuard } from '@/utils/navigation-guard';
-
-const GRID_PADDING = 12;
-const COLUMN_GAP = 6;
 
 interface UseProductCardParams {
   product: Product;
@@ -48,7 +46,7 @@ export function useProductCard({
   const navigateSafely = useNavigationGuard();
   const queryClient = useQueryClient();
   const { width: windowWidth } = useWindowDimensions();
-  const CARD_WIDTH = (windowWidth - GRID_PADDING * 2 - COLUMN_GAP) / 2;
+  const CARD_WIDTH = getProductCardWidth(windowWidth);
 
   const [selectedColorIndex, setSelectedColorIndex] = useState(0);
   const [activeImageIndex, setActiveImageIndex] = useState(0);

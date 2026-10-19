@@ -22,6 +22,7 @@ import type { Product } from '@/features/products/hooks/use-products';
 
 export interface SDUIActionHandlers {
   onSelectCombo?: (combo: ComboBundleData) => void;
+  onPressCampaign?: (campaign: CampaignData) => void;
   onNavigateCategory?: (category: { id: string; name: string; slug: string }) => void;
   onNavigateProduct?: (productId: string) => void;
   onCustomAction?: (actionType: string, payload: unknown) => void;
@@ -55,9 +56,10 @@ export const WIDGET_REGISTRY: Record<string, WidgetComponentRenderer> = {
     <BannerCarousel initialBanners={(widget.data as { banners?: Banner[] } | undefined)?.banners} />
   ),
 
-  CAMPAIGN_COUNTDOWN: ({ widget }) => (
+  CAMPAIGN_COUNTDOWN: ({ widget, handlers }) => (
     <CampaignCountdownBanner
       initialCampaigns={(widget.data as { campaigns?: CampaignData[] } | undefined)?.campaigns}
+      onPress={handlers?.onPressCampaign}
     />
   ),
 

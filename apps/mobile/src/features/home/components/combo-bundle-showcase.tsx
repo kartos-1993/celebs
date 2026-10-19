@@ -1,13 +1,13 @@
 import React from 'react';
 import { ScrollView, TouchableOpacity, View } from 'react-native';
-import { ArrowRight, Plane, Sparkles, Tag } from 'lucide-react-native';
+import { Sparkles } from 'lucide-react-native';
 
 import { useCombos } from '../hooks/use-home-queries';
 import type { ComboBundleData } from '../types';
 
 import { styles } from './combo-bundle-showcase.styles';
+import { ComboProductCard } from './combo-product-card';
 
-import { MobileApparelImage } from '@/components/mobile-apparel-image';
 import { ThemedText } from '@/components/themed-text';
 import { Palette } from '@/constants/theme';
 
@@ -78,74 +78,9 @@ export function ComboBundleShowcase({ onSelectCombo, initialCombos }: ComboBundl
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.scrollPadding}
       >
-        {combos.map((item) => {
-          const isTravel = item.tag === 'abroad-travel';
-          const isPercentage = item.discountType === 'PERCENTAGE';
-          const itemCount = item.itemDetails?.length || item.items?.length || 0;
-          const bannerImage = item.bannerImage;
-
-          return (
-            <TouchableOpacity
-              key={item.id}
-              style={styles.card}
-              activeOpacity={0.9}
-              onPress={() => onSelectCombo?.(item)}
-              accessibilityRole="button"
-              accessibilityLabel={`View bundle ${item.title}`}
-            >
-              <View style={styles.imageBox}>
-                {/* No demo banner fallback: imageBox already paints a neutral
-                    surface, and a fake photo would misrepresent the bundle. */}
-                <MobileApparelImage
-                  src={bannerImage}
-                  preset="grid-card"
-                  containerStyle={styles.cardImage}
-                  alt={item.title}
-                />
-
-                <View style={styles.tagBadge}>
-                  {isTravel ? (
-                    <Plane size={11} color={Palette.white} />
-                  ) : (
-                    <Tag size={11} color={Palette.white} />
-                  )}
-                  <ThemedText style={styles.tagBadgeText}>
-                    {isTravel ? 'ABROAD TRAVEL PACK' : item.tag?.toUpperCase() || 'COMBO'}
-                  </ThemedText>
-                </View>
-
-                <View style={styles.savingsPill}>
-                  <ThemedText style={styles.savingsPillText}>
-                    {isPercentage
-                      ? `SAVE ${item.discountValue}%`
-                      : `SAVE NPR ${Number(item.discountValue).toLocaleString()}`}
-                  </ThemedText>
-                </View>
-              </View>
-
-              <View style={styles.cardBody}>
-                <ThemedText style={styles.cardTitle} numberOfLines={1}>
-                  {item.title}
-                </ThemedText>
-                {item.subtitle ? (
-                  <ThemedText style={styles.cardSubtitle} numberOfLines={2}>
-                    {item.subtitle}
-                  </ThemedText>
-                ) : null}
-
-                <View style={styles.actionRow}>
-                  <ThemedText style={styles.itemsCount}>
-                    {itemCount} item{itemCount !== 1 ? 's' : ''} included
-                  </ThemedText>
-                  <View style={styles.viewBtn}>
-                    <ThemedText style={styles.viewBtnText}>View Bundle</ThemedText>
-                    <ArrowRight size={12} color={Palette.accent} />
-                  </View>
-                </View>
-              </View>
-            </TouchableOpacity>
-          );
-        })}
+        {combos.map((item) => (
+          <ComboProductCard key={item.id} combo={item} onSelectCombo={onSelectCombo} />
+        ))}
       </ScrollView>
     </View>
   );

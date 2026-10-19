@@ -1,7 +1,10 @@
 import type { TimeRemaining } from '../types';
 
-export function calculateTimeRemaining(targetDateIso: string): TimeRemaining {
-  const diff = new Date(targetDateIso).getTime() - new Date().getTime();
+export function calculateTimeRemaining(
+  targetDateIso: string,
+  nowMs: number = Date.now(),
+): TimeRemaining {
+  const diff = new Date(targetDateIso).getTime() - nowMs;
   if (diff <= 0) {
     return { days: 0, hours: 0, minutes: 0, seconds: 0, isExpired: true };
   }

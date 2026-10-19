@@ -1,4 +1,9 @@
-import type { AddToCartInput, CartItemHydrated, CartResponse } from '@celebs/shared-types';
+import type {
+  AddComboToCartInput,
+  AddToCartInput,
+  CartItemHydrated,
+  CartResponse,
+} from '@celebs/shared-types';
 
 export interface CartContextType {
   cart: CartResponse | null;
@@ -15,6 +20,7 @@ export interface CartContextType {
   selectedSavingsPercent: number;
   isAllSelected: boolean;
   addToCart: (input: AddToCartInput) => Promise<void>;
+  addComboToCart: (input: AddComboToCartInput) => Promise<void>;
   updateQuantity: (itemId: string, newQuantity: number) => Promise<void>;
   removeItem: (itemId: string) => Promise<void>;
   clearCart: () => Promise<void>;

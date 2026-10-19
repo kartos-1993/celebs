@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { ImageBackground, TouchableOpacity, View } from 'react-native';
 import { ArrowRight, Flame } from 'lucide-react-native';
 
+import { useCountdown } from '../hooks/use-countdown';
 import { useActiveCampaign } from '../hooks/use-home-queries';
-import type { CampaignData, TimeRemaining } from '../types';
-import { calculateTimeRemaining } from '../utils/countdown-utils';
+import type { CampaignData } from '../types';
 
 import { styles } from './campaign-countdown-banner.styles';
 
@@ -14,35 +14,21 @@ import { hasRenderableImage, resolveImageUrl } from '@/utils/image';
 
 export function CampaignCountdownBanner({
   initialCampaigns,
-}: { initialCampaigns?: CampaignData[] } = {}) {
+  onPress,
+}: {
+  initialCampaigns?: CampaignData[];
+  onPress?: (campaign: CampaignData) => void;
+} = {}) {
   const { activeCampaign: queryActiveCampaign } = useActiveCampaign();
   const activeCampaign =
     (initialCampaigns && initialCampaigns.length > 0 ? initialCampaigns[0] : null) ||
     queryActiveCampaign;
 
-  const endDate = activeCampaign?.endDate ?? '';
   const bannerImage = hasRenderableImage(activeCampaign?.bannerImage)
     ? activeCampaign?.bannerImage
     : undefined;
 
-  const [prevEndDate, setPrevEndDate] = useState(endDate);
-  const [timeRemaining, setTimeRemaining] = useState<TimeRemaining | null>(() =>
-    endDate ? calculateTimeRemaining(endDate) : null,
-  );
-
-  if (endDate !== prevEndDate) {
-    setPrevEndDate(endDate);
-    setTimeRemaining(endDate ? calculateTimeRemaining(endDate) : null);
-  }
-
-  useEffect(() => {
-    if (!endDate) return;
-    const timer = setInterval(() => {
-      setTimeRemaining(calculateTimeRemaining(endDate));
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [endDate]);
+  const timeRemaining = useCountdown(activeCampaign?.endDate ?? '');
 
   // Real empty state, not a stand-in campaign: with nothing scheduled there is
   // nothing truthful to count down to, and the previous FALLBACK_CAMPAIGN
@@ -110,7 +96,13 @@ export function CampaignCountdownBanner({
         </View>
       </View>
 
-      <TouchableOpacity style={styles.shopBtn} activeOpacity={0.85}>
+      <TouchableOpacity
+        style={styles.shopBtn}
+        activeOpacity={0.85}
+        onPress={() => onPress?.(campaign)}
+        accessibilityRole="button"
+        accessibilityLabel={`Shop ${campaign.title}`}
+      >
         <ThemedText style={styles.shopBtnText}>{campaign.title}</ThemedText>
         <ArrowRight size={14} color={Palette.danger} />
       </TouchableOpacity>

@@ -94,6 +94,11 @@ export default function RootLayout() {
                           options={{ headerShown: false, animation: 'slide_from_right' }}
                         />
                         <Stack.Screen
+                          name="campaign/[slug]"
+                          getId={({ params }) => (params?.slug ? String(params.slug) : undefined)}
+                          options={{ headerShown: false, animation: 'slide_from_right' }}
+                        />
+                        <Stack.Screen
                           name="checkout"
                           options={{ headerShown: false, animation: 'slide_from_bottom' }}
                         />

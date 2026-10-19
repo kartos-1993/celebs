@@ -42,6 +42,7 @@ export function getComboDisplayItems(combo: ComboBundleData | null): RenderableB
     return [
       {
         id: item.id || `item_${idx}`,
+        productId: prod.id,
         name: prod.name ?? '',
         originalPrice: finiteOrZero(prod.price),
         image,
