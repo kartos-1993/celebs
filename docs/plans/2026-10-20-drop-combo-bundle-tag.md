@@ -2,7 +2,7 @@
 
 Date: 2026-10-20
 Branch: `chore/drop-combo-bundle-tag`
-Status: implementation
+Status: done (Supabase migration pending approval)
 
 ## Why
 
@@ -65,8 +65,25 @@ before deploying the migration.
 ## Verification
 
 - `pnpm --filter @celebs/shared-types build`
-- API: `pnpm --filter @celebs/api typecheck` and the combo module tests
-- Web-admin: `pnpm --filter @celebs/web-admin typecheck`
-- Mobile: `pnpm --filter @celebs/mobile typecheck` and the home combo tests
+- API: `pnpm --filter api typecheck` and the combo module tests
+- Web-admin: `pnpm --filter web-admin typecheck`
+- Mobile: `pnpm --filter mobile typecheck` and the home combo tests
 - Local DB: `information_schema.columns` no longer lists `ComboBundle.tag`
 - Prisma Client generated with no `ComboBundle.tag` field
+
+## Result
+
+- Commits: `5d953d65` plan, `232d99c8` code/contracts/admin/mobile, `77491875`
+  schema + migration.
+- Local `celebs_test`: `db push` applied; `information_schema.columns` has no
+  `ComboBundle.tag`; 0 combo rows at verification time.
+- Prisma Client v7.2.0 regenerated; the generated `ComboBundle` model has no `tag`.
+- API combo tests: 6/6 passed.
+- Mobile home tests: 28/28 passed.
+- Shared-types build passed; shared-types tests 99/99.
+- Web-admin typecheck passed; mobile typecheck passed.
+- API typecheck still reports the existing unrelated baseline (30 app errors, 37 spec
+  errors, none in combo).
+- Supabase development still has 4 combos, all `tag = NULL`; migration not deployed,
+  pending approval and a snapshot.
+- No push/PR.
