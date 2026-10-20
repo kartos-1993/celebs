@@ -70,13 +70,18 @@ describe('error focus targets for controlled custom fields', () => {
       {},
       (control) => (
         <MultiSelectInputField
-          field={field({ name: 'tags', uiType: 'multiselect', label: 'Tags', dataSource: ['new'] })}
+          field={field({
+            name: 'materials',
+            uiType: 'multiselect',
+            label: 'Materials',
+            dataSource: ['new'],
+          })}
           control={control}
         />
       ),
-      { tags: { type: 'validate', message: 'Tags is required' } },
+      { materials: { type: 'validate', message: 'Materials is required' } },
     );
-    expect(focused).toBe(document.querySelector('[data-field-name="tags"]'));
+    expect(focused).toBe(document.querySelector('[data-field-name="materials"]'));
   });
 
   it('addresses a VariantList field by data-field-name', () => {
