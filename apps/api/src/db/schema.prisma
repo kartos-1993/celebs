@@ -573,7 +573,6 @@ model ComboBundle {
   discountValue Decimal           @db.Decimal(10, 2)
   isFirstParty  Boolean           @default(true)
   isActive      Boolean           @default(true)
-  tag           String?
   items         ComboBundleItem[]
   cartItems     CartItem[]
   createdAt     DateTime          @default(now())
