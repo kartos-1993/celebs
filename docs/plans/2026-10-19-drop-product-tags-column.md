@@ -2,7 +2,7 @@
 
 Date: 2026-10-19
 Branch: `chore/drop-tag-column`
-Status: done (local test DB migrated; shared Supabase deployment pending approval)
+Status: done (local test DB and Supabase deployed 2026-10-20)
 
 ## Context
 
@@ -95,17 +95,17 @@ run against the current database.
 
 ## Acceptance matrix
 
-| Check                                      | Expected                                                                              |
-| ------------------------------------------ | ------------------------------------------------------------------------------------- |
-| `POST /products` with no tags              | product created; response has no `tags` key                                           |
-| `POST /products` with a stray `tags` value | Zod strips it (schema is non-strict); product created without it                      |
-| `PATCH /products/:id`                      | stored product has no `tags`; response has no `tags` key                              |
-| `GET /products`                            | cards have no `tags` key                                                              |
-| Seed rerun                                 | 36 products, none carrying `tags`                                                     |
-| Search by name or brand                    | still returns matches; no tag search existed                                          |
-| `GET /combos?tag=`                         | unaffected (`ComboBundle.tag` untouched)                                              |
-| Database                                   | `Product.tags` absent in the local test DB after sync; shared Supabase pending deploy |
-| Reference audit                            | no `Product.tags` reads/writes left in code or seed data                              |
+| Check                                      | Expected                                                                            |
+| ------------------------------------------ | ----------------------------------------------------------------------------------- |
+| `POST /products` with no tags              | product created; response has no `tags` key                                         |
+| `POST /products` with a stray `tags` value | Zod strips it (schema is non-strict); product created without it                    |
+| `PATCH /products/:id`                      | stored product has no `tags`; response has no `tags` key                            |
+| `GET /products`                            | cards have no `tags` key                                                            |
+| Seed rerun                                 | 36 products, none carrying `tags`                                                   |
+| Search by name or brand                    | still returns matches; no tag search existed                                        |
+| `GET /combos?tag=`                         | ignored; `ComboBundle.tag` was also removed on 2026-10-20                           |
+| Database                                   | `Product.tags` absent in the local test DB and Supabase after the 2026-10-20 deploy |
+| Reference audit                            | no `Product.tags` reads/writes left in code or seed data                            |
 
 ## Verification
 
@@ -174,7 +174,15 @@ npx tsc -b --noEmit
 - Regenerated Prisma Client v7.2.0; the generated types contain no `tags`.
 - Post-drop gates: 8 files / 97 tests (includes category-tree search),
   API `tsc` 0, spec `tsc` 37-error baseline.
-- The Supabase development database still has the physical column; it is
-  nullable and unused, so the new client is compatible. Deployment there is
-  pending explicit approval: `prisma migrate deploy` on the direct 5432 URL,
-  after a snapshot. The drop is irreversible.
+- Supabase deployment completed 2026-10-20 with `prisma migrate deploy` on the
+  direct 5432 URL. Both `20261019141759_drop_product_tags` and
+  `20261020130000_drop_combo_bundle_tag` applied; `migrate status` reports the
+  schema up to date and there are no unfinished migrations.
+- Pre-drop snapshot at
+  `C:\Users\Abishek Shrestha\AppData\Local\Temp\opencode\supabase-tag-drop-20261020`:
+  full `Product` rows (36, all with non-null `tags`), full `ComboBundle` rows
+  (4, all null tags), column definitions, non-null tag values, and migration
+  history.
+- Post-drop verification: both columns absent; row counts unchanged (36
+  products / 4 combos); an app-level read returned a product and a combo.
+- The drop is irreversible without restoring the backed-up columns/values.

@@ -45,9 +45,9 @@ after removing the first.
   `ComboBundle.tag`.
 - **Tests**: update combo fixtures; run the combo API tests, typechecks, shared-types
   build, and mobile home/combo tests.
-- **Local test DB**: apply with `prisma db push` against `.env.test` only. Supabase
-  deployment remains pending explicit approval; the column is nullable and every current
-  value is `NULL`.
+- **Local test DB**: apply with `prisma db push` against `.env.test`; deploy Supabase
+  after approval, a snapshot, and a migration-status check. The column is nullable and
+  every current value was `NULL` before the drop.
 
 ## Out of scope
 
@@ -84,6 +84,13 @@ before deploying the migration.
 - Web-admin typecheck passed; mobile typecheck passed.
 - API typecheck still reports the existing unrelated baseline (30 app errors, 37 spec
   errors, none in combo).
-- Supabase development still has 4 combos, all `tag = NULL`; migration not deployed,
-  pending approval and a snapshot.
+- Supabase deployment completed 2026-10-20: both `20261019141759_drop_product_tags`
+  and `20261020130000_drop_combo_bundle_tag` applied on the direct 5432 URL;
+  `migrate status` reports the schema up to date.
+- Pre-drop snapshot at
+  `C:\Users\Abishek Shrestha\AppData\Local\Temp\opencode\supabase-tag-drop-20261020`:
+  36 full product rows (all with non-null `Product.tags`), 4 full combo rows (all
+  `tag = NULL`), column definitions, and migration history.
+- Post-drop: both columns absent; counts unchanged (36 products / 4 combos); an
+  app-level read returned a product and a combo.
 - No push/PR.
