@@ -11,7 +11,6 @@ export interface ComboBundleType {
   discountType: ComboDiscountType;
   discountValue: number;
   isActive: boolean;
-  tag?: string;
   bannerImage?: string;
   itemCount: number;
   items?: Array<{ id?: string; productId?: string }>;

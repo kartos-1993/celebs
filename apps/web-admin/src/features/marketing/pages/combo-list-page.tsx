@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Plane, Plus, Sparkles, Tag } from 'lucide-react';
+import { CheckCircle2, FileText, Layers, Plus, Sparkles } from 'lucide-react';
 
 import type { ComboBundleType } from '@celebs/shared-types';
 import { Button } from '@celebs/shared-ui/components/button';
@@ -30,7 +30,6 @@ export default function ComboListPage() {
     discountType: c.discountType,
     discountValue: Number(c.discountValue),
     isActive: c.isActive ?? true,
-    tag: c.tag,
     bannerImage: c.bannerImage,
     itemCount: c.items?.length || 0,
     createdAt: c.createdAt,
@@ -39,7 +38,7 @@ export default function ComboListPage() {
   const filteredCombos = combos.filter(
     (c) =>
       c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.tag?.toLowerCase().includes(searchQuery.toLowerCase()),
+      c.slug.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   return (
@@ -67,35 +66,37 @@ export default function ComboListPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="p-4 bg-card rounded-xl border border-border shadow-sm flex items-center gap-3">
           <div className="p-3 bg-info/10 text-info rounded-lg">
-            <Plane className="w-5 h-5" />
+            <Layers className="w-5 h-5" />
           </div>
           <div>
-            <div className="text-xs font-medium text-muted-foreground">Active Travel Packs</div>
+            <div className="text-xs font-medium text-muted-foreground">Total Bundles</div>
             <div className="text-xl font-semibold tracking-tight text-foreground">
-              {combos.filter((c) => c.tag === 'abroad-travel').length} Bundles
-            </div>
-          </div>
-        </div>
-
-        <div className="p-4 bg-card rounded-xl border border-border shadow-sm flex items-center gap-3">
-          <div className="p-3 bg-destructive/10 text-destructive rounded-lg">
-            <Tag className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="text-xs font-medium text-muted-foreground">Festive Combos</div>
-            <div className="text-xl font-semibold tracking-tight text-foreground">
-              {combos.filter((c) => c.tag === 'festive').length} Bundles
+              {combos.length} Bundles
             </div>
           </div>
         </div>
 
         <div className="p-4 bg-card rounded-xl border border-border shadow-sm flex items-center gap-3">
           <div className="p-3 bg-success/10 text-success rounded-lg">
-            <Sparkles className="w-5 h-5" />
+            <CheckCircle2 className="w-5 h-5" />
           </div>
           <div>
-            <div className="text-xs font-medium text-muted-foreground">Average Savings</div>
-            <div className="text-xl font-semibold tracking-tight text-foreground">18.5% Off</div>
+            <div className="text-xs font-medium text-muted-foreground">Active Bundles</div>
+            <div className="text-xl font-semibold tracking-tight text-foreground">
+              {combos.filter((c) => c.isActive).length} Bundles
+            </div>
+          </div>
+        </div>
+
+        <div className="p-4 bg-card rounded-xl border border-border shadow-sm flex items-center gap-3">
+          <div className="p-3 bg-warning/10 text-warning rounded-lg">
+            <FileText className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="text-xs font-medium text-muted-foreground">Draft Bundles</div>
+            <div className="text-xl font-semibold tracking-tight text-foreground">
+              {combos.filter((c) => !c.isActive).length} Bundles
+            </div>
           </div>
         </div>
       </div>
@@ -105,7 +106,7 @@ export default function ComboListPage() {
         <FilterSearch
           value={searchQuery}
           onChange={setSearchQuery}
-          placeholder="Search by bundle title or tag (e.g. abroad-travel, festive)..."
+          placeholder="Search by bundle title or slug..."
         />
       </FilterBar>
 

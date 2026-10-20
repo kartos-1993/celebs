@@ -1,12 +1,9 @@
 import prisma, { Prisma } from '@/config/db.prisma';
 
 export class ComboRepository {
-  async findActiveCombos(tag?: string) {
-    const where: Prisma.ComboBundleWhereInput = { isActive: true };
-    if (tag) where.tag = tag;
-
+  async findActiveCombos() {
     return prisma.comboBundle.findMany({
-      where,
+      where: { isActive: true },
       include: {
         items: true,
       },

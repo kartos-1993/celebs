@@ -65,14 +65,14 @@ export function useCampaign(slug: string) {
   };
 }
 
-export function useCombos(tag?: string) {
+export function useCombos() {
   const {
     data,
     isLoading: loading,
     refetch,
   } = useQuery<ComboBundleData[]>({
-    queryKey: COMBO_QUERY_KEYS.list(tag),
-    queryFn: () => getCombos(tag),
+    queryKey: COMBO_QUERY_KEYS.list(),
+    queryFn: () => getCombos(),
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 

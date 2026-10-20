@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { DollarSign, Percent, Plane, Sparkles } from 'lucide-react';
+import { DollarSign, Percent, Sparkles } from 'lucide-react';
 
 import type { ComboBundleType } from '@celebs/shared-types';
 import { Badge } from '@celebs/shared-ui/components/badge';
@@ -60,15 +60,6 @@ export function ComboCards({
           </div>
 
           <div className="flex flex-wrap items-center gap-1.5">
-            <Badge variant="secondary">
-              {combo.tag === 'abroad-travel' && (
-                <Plane aria-hidden="true" className="mr-1 h-3 w-3 text-info" />
-              )}
-              {combo.tag === 'festive' && (
-                <Sparkles aria-hidden="true" className="mr-1 h-3 w-3 text-warning" />
-              )}
-              {combo.tag || 'general'}
-            </Badge>
             <span className="flex items-center gap-1 text-xs font-semibold text-success">
               {combo.discountType === 'PERCENTAGE' ? (
                 <>

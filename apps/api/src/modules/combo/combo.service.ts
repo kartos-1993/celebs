@@ -62,14 +62,13 @@ export class ComboService {
     }));
   }
 
-  async getActiveCombos(tag?: string) {
-    const key = tag ?? 'all';
-    const cached = await activeCombosCache.get(key);
+  async getActiveCombos() {
+    const cached = await activeCombosCache.get('all');
     if (cached) return cached;
 
-    const combos = await this.comboRepository.findActiveCombos(tag);
+    const combos = await this.comboRepository.findActiveCombos();
     const hydrated = await this.attachProductDetails(combos);
-    await activeCombosCache.set(key, hydrated);
+    await activeCombosCache.set('all', hydrated);
     return hydrated;
   }
 
@@ -112,7 +111,6 @@ export class ComboService {
       discountType: discountTypeEnum,
       discountValue: payload.discountValue,
       isFirstParty: payload.isFirstParty ?? true,
-      tag: payload.tag,
       items: {
         create: payload.productIds.map((productId) => ({
           productId,
@@ -146,7 +144,6 @@ export class ComboService {
         bannerImage: payload.bannerImage,
         discountType: discountTypeEnum,
         discountValue: payload.discountValue,
-        tag: payload.tag,
         items: payload.productIds
           ? {
               create: payload.productIds.map((productId) => ({

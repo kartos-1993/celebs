@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { DollarSign, Percent, Plane, Sparkles } from 'lucide-react';
+import { DollarSign, Percent, Sparkles } from 'lucide-react';
 
 import type { ComboBundleType } from '@celebs/shared-types';
 import { Badge } from '@celebs/shared-ui/components/badge';
@@ -24,7 +24,7 @@ interface ComboTableProps {
 /** Desktop combos table — hidden below md, paired with ComboCards. */
 export function ComboTable({ combos, isLoading }: ComboTableProps) {
   if (isLoading) {
-    return <TableSkeleton rows={10} columns={5} className="hidden md:block" />;
+    return <TableSkeleton rows={10} columns={4} className="hidden md:block" />;
   }
 
   return (
@@ -33,7 +33,6 @@ export function ComboTable({ combos, isLoading }: ComboTableProps) {
         <TableHeader>
           <TableRow className="bg-muted/50">
             <TableHead>Combo Details</TableHead>
-            <TableHead>Category / Tag</TableHead>
             <TableHead>Discount Offer</TableHead>
             <TableHead>Status</TableHead>
             <TableHead className="text-right">Actions</TableHead>
@@ -42,7 +41,7 @@ export function ComboTable({ combos, isLoading }: ComboTableProps) {
         <TableBody>
           {combos.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={5}>
+              <TableCell colSpan={4}>
                 <EmptyState
                   title="No combos found"
                   description="No combo bundles match your query."
@@ -77,17 +76,6 @@ export function ComboTable({ combos, isLoading }: ComboTableProps) {
                       </div>
                     </div>
                   </div>
-                </TableCell>
-                <TableCell>
-                  <Badge variant="secondary">
-                    {combo.tag === 'abroad-travel' && (
-                      <Plane aria-hidden="true" className="mr-1 h-3 w-3 text-info" />
-                    )}
-                    {combo.tag === 'festive' && (
-                      <Sparkles aria-hidden="true" className="mr-1 h-3 w-3 text-warning" />
-                    )}
-                    {combo.tag || 'general'}
-                  </Badge>
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-1 whitespace-nowrap text-xs font-semibold text-success">

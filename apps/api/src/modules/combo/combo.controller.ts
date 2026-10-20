@@ -14,9 +14,8 @@ export class ComboController {
     this.svc = svc;
   }
 
-  public getActiveCombos = asyncHandler(async (req: Request, res: Response) => {
-    const tag = req.query.tag as string | undefined;
-    const data = await this.svc.getActiveCombos(tag);
+  public getActiveCombos = asyncHandler(async (_req: Request, res: Response) => {
+    const data = await this.svc.getActiveCombos();
     return sendSuccess(res, data, 'Active combos retrieved successfully');
   });
 

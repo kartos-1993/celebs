@@ -104,7 +104,6 @@ describe('ComboRepository & ComboService Clean Architecture Suite', () => {
             discountValue: new Prisma.Decimal(15.0),
             isFirstParty: true,
             isActive: true,
-            tag: null,
             createdAt: new Date(),
             updatedAt: new Date(),
             items: [],
@@ -131,7 +130,6 @@ describe('ComboRepository & ComboService Clean Architecture Suite', () => {
           discountValue: new Prisma.Decimal(200.0),
           isFirstParty: true,
           isActive: true,
-          tag: 'summer',
           createdAt: new Date(),
           updatedAt: new Date(),
           items: [

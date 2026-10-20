@@ -31,7 +31,6 @@ export default function ComboFormPage() {
   const [title, setTitle] = useState('');
   const [slug, setSlug] = useState('');
   const [subtitle, setSubtitle] = useState('');
-  const [tag, setTag] = useState('abroad-travel');
   const [discountType, setDiscountType] = useState<ComboDiscountType>('PERCENTAGE');
   const [discountValue, setDiscountValue] = useState<number>(15);
   const [bannerImage, setBannerImage] = useState('');
@@ -49,7 +48,6 @@ export default function ComboFormPage() {
       setTitle(c.title || '');
       setSlug(c.slug || '');
       setSubtitle(c.subtitle || '');
-      setTag(c.tag || 'abroad-travel');
       setDiscountType(c.discountType || 'PERCENTAGE');
       setDiscountValue(Number(c.discountValue) || 15);
       setBannerImage(c.bannerImage || '');
@@ -80,7 +78,6 @@ export default function ComboFormPage() {
         title,
         slug,
         subtitle,
-        tag,
         discountType,
         discountValue: Number(discountValue),
         bannerImage,
@@ -150,32 +147,15 @@ export default function ComboFormPage() {
           </div>
         </div>
 
-        {/* Subtitle & Tag */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-1.5">
-            <Label>Subtitle / Catchphrase</Label>
-            <Input
-              placeholder="e.g. Complete thermal & heavy coat pack for Aussie winters"
-              value={subtitle}
-              onChange={(e) => setSubtitle(e.target.value)}
-              className="text-xs h-9"
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label>Category Tag</Label>
-            <Select value={tag} onValueChange={setTag}>
-              <SelectTrigger className="text-xs h-9">
-                <SelectValue placeholder="Select Tag" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="abroad-travel">✈️ Abroad Travel Pack</SelectItem>
-                <SelectItem value="festive">🪔 Festive & Festival Pack</SelectItem>
-                <SelectItem value="style-pack">👗 Style & Outfit Pack</SelectItem>
-                <SelectItem value="general">✨ General Bundle</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        {/* Subtitle */}
+        <div className="space-y-1.5">
+          <Label>Subtitle / Catchphrase</Label>
+          <Input
+            placeholder="e.g. Complete thermal & heavy coat pack for Aussie winters"
+            value={subtitle}
+            onChange={(e) => setSubtitle(e.target.value)}
+            className="text-xs h-9"
+          />
         </div>
 
         {/* Discount Type & Value */}

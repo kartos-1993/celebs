@@ -9,7 +9,6 @@ export const createComboSchema = z.object({
   discountType: z.enum(['PERCENTAGE', 'FIXED_AMOUNT']),
   discountValue: z.number().positive('Discount value must be positive'),
   isFirstParty: z.boolean().default(true),
-  tag: z.string().optional(),
   productIds: z.array(z.string()).min(1, 'At least 1 product is required'),
 });
 

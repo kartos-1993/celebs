@@ -66,7 +66,6 @@ export interface ComboBundleData {
   discountType: 'PERCENTAGE' | 'FIXED_AMOUNT';
   discountValue: number;
   isFirstParty: boolean;
-  tag?: string;
   items?: ComboItemData[];
   itemDetails?: ComboItemData[];
   createdAt: string;

@@ -18,7 +18,7 @@ export const CAMPAIGN_QUERY_KEYS = {
 
 export const COMBO_QUERY_KEYS = {
   all: ['combos'] as const,
-  list: (tag?: string) => [...COMBO_QUERY_KEYS.all, 'list', { tag }] as const,
+  list: () => [...COMBO_QUERY_KEYS.all, 'list'] as const,
   detail: (idOrSlug: string) => [...COMBO_QUERY_KEYS.all, 'detail', idOrSlug] as const,
 };
 
@@ -44,15 +44,9 @@ export async function getCampaignBySlug(slug: string): Promise<CampaignData> {
   );
 }
 
-export async function getCombos(tag?: string): Promise<ComboBundleData[]> {
-  const params: Record<string, unknown> = {};
-  if (tag) params.tag = tag;
-
+export async function getCombos(): Promise<ComboBundleData[]> {
   const data = await handleApiResponse(
-    apiClient.get<IApiResponse<ComboBundleData[]>>('/combos', {
-      params,
-      skipAuth: true,
-    }),
+    apiClient.get<IApiResponse<ComboBundleData[]>>('/combos', { skipAuth: true }),
   );
   return Array.isArray(data) ? data : [];
 }
