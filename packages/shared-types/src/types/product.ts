@@ -15,6 +15,9 @@ export const PRODUCT_STATUS = {
 
 export type ProductStatus = (typeof PRODUCT_STATUS)[keyof typeof PRODUCT_STATUS];
 
+export const PLATFORM_VENDOR_ID = '00000000-0000-0000-0000-000000000001';
+export const PLATFORM_VENDOR_NAME = 'Celebs Official (1P)';
+
 /** Statuses a vendor may still modify (pre-approval lifecycle). */
 export const VENDOR_EDITABLE_STATUSES: readonly ProductStatus[] = [
   PRODUCT_STATUS.DRAFT,

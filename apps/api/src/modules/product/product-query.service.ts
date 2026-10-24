@@ -80,10 +80,14 @@ export class ProductQueryService {
     if (cached) return cached;
 
     const product = await this.products.findPublicDetailById(id);
-    if (!product) return null;
+    if (!product) {
+      throw new AppError('Product not found', HTTPSTATUS.NOT_FOUND, ErrorCode.PRODUCT_NOT_FOUND);
+    }
 
     const formatted = formatProductResponse(product, { isElevated: false });
-    if (!formatted) return null;
+    if (!formatted) {
+      throw new AppError('Product not found', HTTPSTATUS.NOT_FOUND, ErrorCode.PRODUCT_NOT_FOUND);
+    }
 
     const shaped = formatStorefrontDetail(formatted);
     await writeCachedJson(cacheKey, shaped, PRODUCT_DETAIL_TTL_SECONDS);
@@ -99,15 +103,19 @@ export class ProductQueryService {
     });
   }
 
-  async getStoreProductById(id: string, storeId: string): Promise<AdminProductDetail | null> {
+  async getStoreProductById(id: string, storeId: string): Promise<AdminProductDetail> {
     if (!id || typeof id !== 'string') {
       throw new AppError('Invalid product ID', HTTPSTATUS.BAD_REQUEST, ErrorCode.INVALID_REQUEST);
     }
     const product = await this.products.findStoreDetailById(id, storeId);
-    if (!product) return null;
+    if (!product) {
+      throw new AppError('Product not found', HTTPSTATUS.NOT_FOUND, ErrorCode.PRODUCT_NOT_FOUND);
+    }
 
     const formatted = formatProductResponse(product, { isElevated: true });
-    if (!formatted) return null;
+    if (!formatted) {
+      throw new AppError('Product not found', HTTPSTATUS.NOT_FOUND, ErrorCode.PRODUCT_NOT_FOUND);
+    }
 
     return formatAdminDetail(formatted);
   }
@@ -119,15 +127,19 @@ export class ProductQueryService {
     });
   }
 
-  async getAdminProductById(id: string): Promise<AdminProductDetail | null> {
+  async getAdminProductById(id: string): Promise<AdminProductDetail> {
     if (!id || typeof id !== 'string') {
       throw new AppError('Invalid product ID', HTTPSTATUS.BAD_REQUEST, ErrorCode.INVALID_REQUEST);
     }
     const product = await this.products.findAdminDetailById(id);
-    if (!product) return null;
+    if (!product) {
+      throw new AppError('Product not found', HTTPSTATUS.NOT_FOUND, ErrorCode.PRODUCT_NOT_FOUND);
+    }
 
     const formatted = formatProductResponse(product, { isElevated: true });
-    if (!formatted) return null;
+    if (!formatted) {
+      throw new AppError('Product not found', HTTPSTATUS.NOT_FOUND, ErrorCode.PRODUCT_NOT_FOUND);
+    }
 
     return formatAdminDetail(formatted);
   }
@@ -201,28 +213,33 @@ export class ProductQueryService {
 
     if (filters.cursor) {
       const decoded = decodeProductCursor(filters.cursor);
-      if (decoded) {
-        if (decoded.v !== '') {
-          const cursorVal =
-            sortField === 'createdAt' && typeof decoded.v === 'string'
-              ? new Date(decoded.v)
-              : sortField === 'price'
-                ? new Prisma.Decimal(decoded.v)
-                : decoded.v;
-          const op = sortOrder === 'desc' ? 'lt' : 'gt';
+      if (!decoded) {
+        throw new AppError(
+          'Invalid pagination cursor',
+          HTTPSTATUS.BAD_REQUEST,
+          ErrorCode.INVALID_REQUEST,
+        );
+      }
+      if (decoded.v !== '') {
+        const cursorVal =
+          sortField === 'createdAt' && typeof decoded.v === 'string'
+            ? new Date(decoded.v)
+            : sortField === 'price'
+              ? new Prisma.Decimal(decoded.v)
+              : decoded.v;
+        const op = sortOrder === 'desc' ? 'lt' : 'gt';
 
-          andClauses.push({
-            OR: [
-              { [sortField]: { [op]: cursorVal } },
-              { [sortField]: cursorVal, id: { [op]: decoded.id } },
-            ],
-          });
-          where.AND = andClauses;
-        } else {
-          // Backward compatibility for raw UUID cursor
-          findOptions.cursor = { id: decoded.id };
-          findOptions.skip = 1;
-        }
+        andClauses.push({
+          OR: [
+            { [sortField]: { [op]: cursorVal } },
+            { [sortField]: cursorVal, id: { [op]: decoded.id } },
+          ],
+        });
+        where.AND = andClauses;
+      } else {
+        // Backward compatibility for raw UUID cursor
+        findOptions.cursor = { id: decoded.id };
+        findOptions.skip = 1;
       }
     } else {
       findOptions.skip = (page - 1) * limit;
