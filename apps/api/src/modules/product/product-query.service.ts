@@ -65,25 +65,78 @@ export class ProductQueryService {
     return this.getAllProducts(filters, filters.page ?? 1, filters.limit ?? 10, opts);
   }
 
+  async getPublicProducts(filters: ProductFilterType) {
+    return this.getAllProducts(filters, filters.page ?? 1, filters.limit ?? 10, {
+      isElevated: false,
+    });
+  }
+
+  async getPublicProductById(id: string): Promise<StorefrontDetail | null> {
+    if (!id || typeof id !== 'string') {
+      throw new AppError('Invalid product ID', HTTPSTATUS.BAD_REQUEST, ErrorCode.INVALID_REQUEST);
+    }
+    const cacheKey = productDetailKey(id, false);
+    const cached = await readCachedJson<StorefrontDetail | null>(cacheKey);
+    if (cached) return cached;
+
+    const product = await this.products.findPublicDetailById(id);
+    if (!product) return null;
+
+    const formatted = formatProductResponse(product, { isElevated: false });
+    if (!formatted) return null;
+
+    const shaped = formatStorefrontDetail(formatted);
+    await writeCachedJson(cacheKey, shaped, PRODUCT_DETAIL_TTL_SECONDS);
+    return shaped;
+  }
+
+  async getStoreProducts(filters: ProductFilterType, storeId: string, actor: Actor) {
+    return this.getAllProducts(filters, filters.page ?? 1, filters.limit ?? 10, {
+      storeId,
+      actor,
+      isStoreManagement: true,
+      isElevated: true,
+    });
+  }
+
+  async getStoreProductById(id: string, storeId: string): Promise<AdminProductDetail | null> {
+    if (!id || typeof id !== 'string') {
+      throw new AppError('Invalid product ID', HTTPSTATUS.BAD_REQUEST, ErrorCode.INVALID_REQUEST);
+    }
+    const product = await this.products.findStoreDetailById(id, storeId);
+    if (!product) return null;
+
+    const formatted = formatProductResponse(product, { isElevated: true });
+    if (!formatted) return null;
+
+    return formatAdminDetail(formatted);
+  }
+
+  async getAdminProducts(filters: ProductFilterType, actor: Actor) {
+    return this.getAllProducts(filters, filters.page ?? 1, filters.limit ?? 10, {
+      actor,
+      isElevated: true,
+    });
+  }
+
+  async getAdminProductById(id: string): Promise<AdminProductDetail | null> {
+    if (!id || typeof id !== 'string') {
+      throw new AppError('Invalid product ID', HTTPSTATUS.BAD_REQUEST, ErrorCode.INVALID_REQUEST);
+    }
+    const product = await this.products.findAdminDetailById(id);
+    if (!product) return null;
+
+    const formatted = formatProductResponse(product, { isElevated: true });
+    if (!formatted) return null;
+
+    return formatAdminDetail(formatted);
+  }
+
   async getProductById(
     id: string,
     isElevated = false,
   ): Promise<StorefrontDetail | AdminProductDetail | null> {
-    if (!id || typeof id !== 'string') {
-      throw new AppError('Invalid product ID', HTTPSTATUS.BAD_REQUEST, ErrorCode.INVALID_REQUEST);
-    }
-    const cacheKey = productDetailKey(id, isElevated);
-    const cached = await readCachedJson<StorefrontDetail | AdminProductDetail | null>(cacheKey);
-    if (cached) return cached;
-
-    const product = await this.products.findDetailedById(id, isElevated);
-
-    if (!product) return null;
-    const formatted = formatProductResponse(product, { isElevated });
-    if (!formatted) return null;
-    const shaped = isElevated ? formatAdminDetail(formatted) : formatStorefrontDetail(formatted);
-    await writeCachedJson(cacheKey, shaped, PRODUCT_DETAIL_TTL_SECONDS);
-    return shaped;
+    return isElevated ? this.getAdminProductById(id) : this.getPublicProductById(id);
   }
 
   async getProductsByVendor(
@@ -141,7 +194,7 @@ export class ProductQueryService {
       where,
       orderBy,
       take: fetchLimit,
-      select: filters.cursor ? PRODUCT_FEED_SELECT : PRODUCT_LIST_SELECT,
+      select: opts.isElevated ? PRODUCT_LIST_SELECT : PRODUCT_FEED_SELECT,
     };
 
     const isCursorMode = Boolean(filters.cursor);
@@ -153,7 +206,9 @@ export class ProductQueryService {
           const cursorVal =
             sortField === 'createdAt' && typeof decoded.v === 'string'
               ? new Date(decoded.v)
-              : decoded.v;
+              : sortField === 'price'
+                ? new Prisma.Decimal(decoded.v)
+                : decoded.v;
           const op = sortOrder === 'desc' ? 'lt' : 'gt';
 
           andClauses.push({
@@ -286,14 +341,107 @@ export class ProductQueryService {
       where.featured = filters.featured;
     }
 
-    if (filters.minPrice !== undefined || filters.maxPrice !== undefined) {
-      where.price = {};
-      if (filters.minPrice !== undefined) where.price.gte = filters.minPrice;
-      if (filters.maxPrice !== undefined) where.price.lte = filters.maxPrice;
+    if (filters.categoryId) {
+      where.categoryId = filters.categoryId;
     }
 
     if (filters.subcategoryId) {
       where.subcategoryId = filters.subcategoryId;
+    }
+
+    // Discount-Aware Effective Price Range
+    if (filters.minPrice !== undefined || filters.maxPrice !== undefined) {
+      const min = filters.minPrice ?? 0;
+      const max = filters.maxPrice ?? Number.MAX_SAFE_INTEGER;
+      andClauses.push({
+        OR: [
+          // Active discount in range
+          {
+            discountedPrice: { gte: min, lte: max, not: null },
+          },
+          // No discount or zero discount, regular price in range
+          {
+            AND: [
+              { OR: [{ discountedPrice: null }, { discountedPrice: 0 }] },
+              { price: { gte: min, lte: max } },
+            ],
+          },
+        ],
+      });
+    }
+
+    // Relational Size Filtering
+    if (filters.sizes) {
+      const sizeList = Array.isArray(filters.sizes) ? filters.sizes : [filters.sizes];
+      if (sizeList.length > 0) {
+        andClauses.push({
+          inventories: {
+            some: {
+              size: { in: sizeList, mode: 'insensitive' },
+              ...(isElevated ? {} : { quantity: { gt: 0 } }),
+            },
+          },
+        });
+      }
+    }
+
+    // Relational Color Filtering
+    if (filters.colors) {
+      const colorList = Array.isArray(filters.colors) ? filters.colors : [filters.colors];
+      if (colorList.length > 0) {
+        andClauses.push({
+          inventories: {
+            some: {
+              colorVariantName: { in: colorList, mode: 'insensitive' },
+              ...(isElevated ? {} : { quantity: { gt: 0 } }),
+            },
+          },
+        });
+      }
+    }
+
+    // Dynamic Attributes & Fits Filtering
+    if (filters.fits) {
+      const fitList = Array.isArray(filters.fits) ? filters.fits : [filters.fits];
+      if (fitList.length > 0) {
+        andClauses.push({
+          OR: fitList.flatMap((fit) => [
+            { dynamicData: { path: ['fit'], equals: fit } },
+            { dynamicData: { path: ['values', 'fit'], equals: fit } },
+            { dynamicData: { path: ['fit'], array_contains: [fit] } },
+          ]),
+        });
+      }
+    }
+
+    if (filters.attributes && typeof filters.attributes === 'object') {
+      for (const [key, val] of Object.entries(filters.attributes)) {
+        if (typeof val === 'string' && val.trim()) {
+          andClauses.push({
+            OR: [
+              { dynamicData: { path: [key], equals: val } },
+              { dynamicData: { path: ['values', key], equals: val } },
+            ],
+          });
+        }
+      }
+    }
+
+    // Stock State Filter (Management Table)
+    if (filters.stockState && filters.stockState !== 'all') {
+      if (filters.stockState === 'out') {
+        andClauses.push({
+          OR: [{ inventories: { none: {} } }, { inventories: { every: { quantity: { lte: 0 } } } }],
+        });
+      } else if (filters.stockState === 'in') {
+        andClauses.push({
+          inventories: { some: { quantity: { gte: 10 } } },
+        });
+      } else if (filters.stockState === 'low') {
+        andClauses.push({
+          inventories: { some: { quantity: { gt: 0, lt: 10 } } },
+        });
+      }
     }
   }
 

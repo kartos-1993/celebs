@@ -302,9 +302,9 @@ export class CartService {
   ): Promise<CartResponse> {
     const { productId, colorVariantName, size, quantity } = input;
 
-    // 1. Validate Product Existence in PostgreSQL Prisma
-    const product = await prisma.product.findUnique({
-      where: { id: productId },
+    // 1. Validate Product Existence and published status in PostgreSQL
+    const product = await prisma.product.findFirst({
+      where: { id: productId, status: 'published' },
       select: { id: true },
     });
 

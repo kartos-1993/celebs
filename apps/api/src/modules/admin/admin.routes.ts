@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { Permission } from '@celebs/rbac';
 import { asyncHandler } from '@celebs/shared-utils';
 
+import adminProductRoutes from '../product/admin-product.routes';
 import { userController } from '../user/user.controller';
 
 import { adminController } from './admin.controller';
@@ -20,6 +21,9 @@ const adminRoutes = Router();
 adminRoutes.use(authenticateJWT);
 adminRoutes.use(asyncHandler(actorContext));
 adminRoutes.use(requirePlatformActor);
+
+// Catalog Administration (/admin/products)
+adminRoutes.use('/products', adminProductRoutes);
 
 // Vendor Management (requires VENDOR_MANAGE permission)
 adminRoutes.get(

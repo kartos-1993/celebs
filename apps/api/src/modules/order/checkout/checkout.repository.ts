@@ -72,7 +72,7 @@ export class CheckoutRepository {
 
   async findCheckoutProducts(productIds: string[]) {
     return prisma.product.findMany({
-      where: { id: { in: productIds } },
+      where: { id: { in: productIds }, status: 'published' },
       // Weight and dimensions are selected because the delivery quote is
       // derived from them, and the figure is snapshotted onto the order item so
       // it survives a later change to the product.

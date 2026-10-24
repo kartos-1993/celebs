@@ -29,8 +29,8 @@ export class WishlistRepository {
   }
 
   async findProductById(productId: string) {
-    return prisma.product.findUnique({
-      where: { id: productId },
+    return prisma.product.findFirst({
+      where: { id: productId, status: 'published' },
     });
   }
 }

@@ -1,5 +1,7 @@
 import { Prisma, type Product } from '@prisma/client';
 
+import { PRODUCT_STATUS } from '@celebs/shared-types';
+
 import { PRODUCT_DETAIL_INCLUDE, PRODUCT_PUBLIC_DETAIL_SELECT } from './product-projections';
 
 import prisma from '@/config/db.prisma';
@@ -24,39 +26,29 @@ export class ProductRepository {
     return getDelegate(db).findUnique({ where: { id } });
   }
 
+  findPublicDetailById(id: string, db: DbClient = this.db) {
+    return getDelegate(db).findFirst({
+      where: { id, status: PRODUCT_STATUS.PUBLISHED },
+      select: PRODUCT_PUBLIC_DETAIL_SELECT,
+    });
+  }
+
+  findStoreDetailById(id: string, storeId: string, db: DbClient = this.db) {
+    return getDelegate(db).findFirst({
+      where: { id, vendorId: storeId, status: { not: PRODUCT_STATUS.ARCHIVED } },
+      include: PRODUCT_DETAIL_INCLUDE,
+    });
+  }
+
+  findAdminDetailById(id: string, db: DbClient = this.db) {
+    return getDelegate(db).findUnique({
+      where: { id },
+      include: PRODUCT_DETAIL_INCLUDE,
+    });
+  }
+
   findDetailedById(id: string, isElevated = false, db: DbClient = this.db) {
-    return isElevated
-      ? getDelegate(db).findUnique({
-          where: { id },
-          include: {
-            category: { select: { id: true, name: true, slug: true, path: true, level: true } },
-            subcategory: { select: { id: true, name: true, slug: true, path: true, level: true } },
-            brandRef: {
-              select: {
-                id: true,
-                name: true,
-                slug: true,
-                logoUrl: true,
-                tier: true,
-                isGated: true,
-                countryOfOrigin: true,
-              },
-            },
-            inventories: {
-              select: {
-                id: true,
-                colorVariantName: true,
-                size: true,
-                sku: true,
-                quantity: true,
-              },
-            },
-          },
-        })
-      : getDelegate(db).findUnique({
-          where: { id },
-          select: PRODUCT_PUBLIC_DETAIL_SELECT,
-        });
+    return isElevated ? this.findAdminDetailById(id, db) : this.findPublicDetailById(id, db);
   }
 
   findManyList(args: Prisma.ProductFindManyArgs, db: DbClient = this.db) {

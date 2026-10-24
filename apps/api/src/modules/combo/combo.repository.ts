@@ -72,7 +72,7 @@ export class ComboRepository {
   }
 
   async findProductsByIds(ids: string[]) {
-    return prisma.product.findMany({ where: { id: { in: ids } } });
+    return prisma.product.findMany({ where: { id: { in: ids }, status: 'published' } });
   }
 }
 

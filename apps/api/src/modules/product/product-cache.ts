@@ -28,10 +28,20 @@ export function signListQuery(input: Record<string, unknown>): string {
   const canonical = Object.entries(input)
     .filter(([, value]) => value !== undefined && value !== null && value !== '')
     .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
-    .map(
-      ([key, value]) =>
-        `${key}=${typeof value === 'object' ? JSON.stringify(value) : String(value)}`,
-    )
+    .map(([key, value]) => {
+      let serialized: string;
+      if (Array.isArray(value)) {
+        serialized = JSON.stringify([...value].sort());
+      } else if (typeof value === 'object') {
+        const sortedObj = Object.fromEntries(
+          Object.entries(value as Record<string, unknown>).sort(([a], [b]) => a.localeCompare(b)),
+        );
+        serialized = JSON.stringify(sortedObj);
+      } else {
+        serialized = String(value);
+      }
+      return `${key}=${serialized}`;
+    })
     .join('&');
   return createHash('sha256').update(canonical).digest('hex').slice(0, 32);
 }

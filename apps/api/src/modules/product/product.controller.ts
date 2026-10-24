@@ -37,6 +37,150 @@ const productReviewQueueQuerySchema = z.object({
 export class ProductController {
   constructor(private readonly productService: ProductService) {}
 
+  // --- PUBLIC STOREFRONT SURFACE ---
+
+  getPublicProducts = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const filters = productFilterSchema.parse(req.query);
+      const result = await this.productService.getPublicProducts(filters);
+      sendSuccess(res, result, 'Products retrieved successfully');
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  getPublicProductById = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = idParamSchema.parse(req.params);
+      const product = await this.productService.getPublicProductById(id);
+      if (!product) {
+        throw new AppError('Product not found', HTTPSTATUS.NOT_FOUND, ErrorCode.PRODUCT_NOT_FOUND);
+      }
+      sendSuccess(res, product, 'Product retrieved successfully');
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  // --- STORE SELLER SURFACE ---
+
+  getStoreProducts = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const filters = productFilterSchema.parse(req.query);
+      const storeId = req.store?.id;
+      const actor = req.actor;
+      if (!storeId || !actor) {
+        throw new AppError(
+          'Seller store context required',
+          HTTPSTATUS.FORBIDDEN,
+          ErrorCode.SELLER_CONTEXT_REQUIRED,
+        );
+      }
+      const result = await this.productService.getStoreProducts(filters, storeId, actor);
+      sendSuccess(res, result, 'Store products retrieved successfully');
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  getStoreProductById = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = idParamSchema.parse(req.params);
+      const storeId = req.store?.id;
+      if (!storeId) {
+        throw new AppError(
+          'Seller store context required',
+          HTTPSTATUS.FORBIDDEN,
+          ErrorCode.SELLER_CONTEXT_REQUIRED,
+        );
+      }
+      const product = await this.productService.getStoreProductById(id, storeId);
+      if (!product) {
+        throw new AppError('Product not found', HTTPSTATUS.NOT_FOUND, ErrorCode.PRODUCT_NOT_FOUND);
+      }
+      sendSuccess(res, product, 'Store product retrieved successfully');
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  createStoreProduct = async (req: Request, res: Response, next: NextFunction) => {
+    return this.createProduct(req, res, next);
+  };
+
+  updateStoreProduct = async (req: Request, res: Response, next: NextFunction) => {
+    return this.updateProduct(req, res, next);
+  };
+
+  toggleStoreProductActivation = async (req: Request, res: Response, next: NextFunction) => {
+    return this.toggleProductActivation(req, res, next);
+  };
+
+  archiveStoreProduct = async (req: Request, res: Response, next: NextFunction) => {
+    return this.archiveProduct(req, res, next);
+  };
+
+  submitStoreProductForReview = async (req: Request, res: Response, next: NextFunction) => {
+    return this.submitProductForReview(req, res, next);
+  };
+
+  // --- ADMIN PLATFORM SURFACE ---
+
+  getAdminProducts = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const filters = productFilterSchema.parse(req.query);
+      const actor = req.actor;
+      if (!actor) {
+        throw new AppError(
+          'Authentication required',
+          HTTPSTATUS.UNAUTHORIZED,
+          ErrorCode.AUTH_TOKEN_MISSING,
+        );
+      }
+      const result = await this.productService.getAdminProducts(filters, actor);
+      sendSuccess(res, result, 'Admin products retrieved successfully');
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  getAdminProductById = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = idParamSchema.parse(req.params);
+      const product = await this.productService.getAdminProductById(id);
+      if (!product) {
+        throw new AppError('Product not found', HTTPSTATUS.NOT_FOUND, ErrorCode.PRODUCT_NOT_FOUND);
+      }
+      sendSuccess(res, product, 'Admin product retrieved successfully');
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  getAdminReviewQueue = async (req: Request, res: Response, next: NextFunction) => {
+    return this.getProductReviewQueue(req, res, next);
+  };
+
+  reviewAdminProduct = async (req: Request, res: Response, next: NextFunction) => {
+    return this.reviewProduct(req, res, next);
+  };
+
+  createAdminProduct = async (req: Request, res: Response, next: NextFunction) => {
+    return this.createProduct(req, res, next);
+  };
+
+  updateAdminProduct = async (req: Request, res: Response, next: NextFunction) => {
+    return this.updateProduct(req, res, next);
+  };
+
+  toggleAdminProductActivation = async (req: Request, res: Response, next: NextFunction) => {
+    return this.toggleProductActivation(req, res, next);
+  };
+
+  archiveAdminProduct = async (req: Request, res: Response, next: NextFunction) => {
+    return this.archiveProduct(req, res, next);
+  };
+
   createProduct = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const actor = req.actor;

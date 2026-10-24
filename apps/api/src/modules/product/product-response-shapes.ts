@@ -203,6 +203,31 @@ function stripVariantImages(variant: Record<string, unknown>): string[] {
   return stripSwatchDupe(variant.images, optStr(variant.swatch));
 }
 
+function resolveStockUrgency(stockTotal?: unknown): {
+  stockStatus: 'IN_STOCK' | 'LOW_STOCK' | 'OUT_OF_STOCK';
+  remainingUnits?: number;
+  stockUrgencyMessage?: string;
+} {
+  const total = typeof stockTotal === 'number' ? Math.max(0, stockTotal) : 0;
+  if (total <= 0) {
+    return { stockStatus: 'OUT_OF_STOCK' };
+  }
+  if (total <= 5) {
+    const stockUrgencyMessage =
+      total === 1
+        ? 'Only 1 remaining'
+        : total < 5
+          ? `Only ${total} remaining`
+          : 'Less than 5 remaining';
+    return {
+      stockStatus: 'LOW_STOCK',
+      remainingUnits: total,
+      stockUrgencyMessage,
+    };
+  }
+  return { stockStatus: 'IN_STOCK' };
+}
+
 // ── Canonical Presenters per Consumer ───────────────────────────────────────
 
 /**
@@ -217,6 +242,7 @@ export function formatStorefrontCard(formatted: Record<string, unknown>): Storef
     formatted.discountedPrice,
   );
   const colorVariants = Array.isArray(formatted.colorVariants) ? formatted.colorVariants : [];
+  const stockUrgency = resolveStockUrgency(formatted._derivedStockTotal);
 
   return {
     id: str(formatted.id),
@@ -230,11 +256,19 @@ export function formatStorefrontCard(formatted: Record<string, unknown>): Storef
     ratingAverage: optNum(formatted.ratingAverage),
     ratingCount: optNum(formatted.ratingCount),
     inStock: formatted.inStock === true,
+    stockStatus: stockUrgency.stockStatus,
+    ...(stockUrgency.remainingUnits !== undefined
+      ? {
+          remainingUnits: stockUrgency.remainingUnits,
+          stockUrgencyMessage: stockUrgency.stockUrgencyMessage,
+        }
+      : {}),
     colorVariants: colorVariants.map((entry) => {
       const variant = (entry ?? {}) as Record<string, unknown>;
       return {
         name: str(variant.name, 'Variant'),
         images: stripVariantImages(variant),
+        inStock: variant.inStock !== false,
       };
     }),
   };
@@ -250,7 +284,12 @@ export function formatStorefrontDetail(formatted: Record<string, unknown>): Stor
     const variant = (entry ?? {}) as Record<string, unknown>;
     const swatch = optStr(variant.swatch);
     const stocks = Array.isArray(variant.stocks)
-      ? (variant.stocks as Array<{ size: string; quantity: number }>)
+      ? (variant.stocks as Array<{
+          size: string;
+          quantity: number;
+          inStock?: boolean;
+          remainingUnits?: number;
+        }>)
       : undefined;
     return {
       name: str(variant.name, 'Variant'),
@@ -258,6 +297,7 @@ export function formatStorefrontDetail(formatted: Record<string, unknown>): Stor
       swatch,
       images: stripSwatchDupe(variant.images, swatch),
       stocks,
+      inStock: variant.inStock !== false,
     };
   });
   const price = num(formatted.price);
@@ -269,6 +309,7 @@ export function formatStorefrontDetail(formatted: Record<string, unknown>): Stor
   );
 
   const shippingAndWarranty = resolveShippingAndWarranty(formatted);
+  const stockUrgency = resolveStockUrgency(formatted._derivedStockTotal);
 
   return {
     id: str(formatted.id),
@@ -286,6 +327,13 @@ export function formatStorefrontDetail(formatted: Record<string, unknown>): Stor
     ratingAverage: optNum(formatted.ratingAverage),
     ratingCount: optNum(formatted.ratingCount),
     inStock: formatted.inStock === true,
+    stockStatus: stockUrgency.stockStatus,
+    ...(stockUrgency.remainingUnits !== undefined
+      ? {
+          remainingUnits: stockUrgency.remainingUnits,
+          stockUrgencyMessage: stockUrgency.stockUrgencyMessage,
+        }
+      : {}),
     category: objectOrNull(formatted.category),
     subcategory: objectOrNull(formatted.subcategory),
     status: nullStr(formatted.status),

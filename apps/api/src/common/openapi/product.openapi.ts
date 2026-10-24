@@ -243,3 +243,82 @@ registry.registerPath({
     ...withErrors(401, 403, 404),
   },
 });
+
+// ── GET /store/products ──
+registry.registerPath({
+  method: 'get',
+  path: '/store/products',
+  tags: ['Seller Products'],
+  summary: 'List products owned by current authenticated seller',
+  security: [{ bearerAuth: [] }],
+  request: {
+    query: z.object({
+      page: z.string().optional(),
+      limit: z.string().optional(),
+      status: z.string().optional(),
+      categoryId: z.string().optional(),
+      stockState: z.enum(['IN_STOCK', 'OUT_OF_STOCK']).optional(),
+      sort: z.string().optional(),
+    }),
+  },
+  responses: {
+    200: {
+      description: 'Seller catalog list with stock totals',
+      content: {
+        'application/json': {
+          schema: z.object({
+            success: z.boolean(),
+            data: z.array(z.record(z.string(), z.unknown())),
+            meta: z.object({
+              page: z.number(),
+              limit: z.number(),
+              total: z.number(),
+              totalPages: z.number(),
+            }),
+          }),
+        },
+      },
+    },
+    ...withErrors(401, 403),
+  },
+});
+
+// ── GET /admin/products ──
+registry.registerPath({
+  method: 'get',
+  path: '/admin/products',
+  tags: ['Admin Products'],
+  summary: 'List all products across the platform (Platform Admin only)',
+  security: [{ bearerAuth: [] }],
+  request: {
+    query: z.object({
+      page: z.string().optional(),
+      limit: z.string().optional(),
+      vendorId: z.string().optional(),
+      categoryId: z.string().optional(),
+      status: z.string().optional(),
+      stockState: z.enum(['IN_STOCK', 'OUT_OF_STOCK']).optional(),
+      sort: z.string().optional(),
+    }),
+  },
+  responses: {
+    200: {
+      description: 'Platform wide product catalog list',
+      content: {
+        'application/json': {
+          schema: z.object({
+            success: z.boolean(),
+            data: z.array(z.record(z.string(), z.unknown())),
+            meta: z.object({
+              page: z.number(),
+              limit: z.number(),
+              total: z.number(),
+              totalPages: z.number(),
+            }),
+          }),
+        },
+      },
+    },
+    ...withErrors(401, 403),
+  },
+});

@@ -98,6 +98,8 @@ const resolveStorefrontColorVariants = (
             ? (matchingStored.stocks as Array<{ size: string; quantity: number }>)
             : [];
         const stocks = applyLiveStock(name, initialStocks);
+        const variantStockTotal = stocks.reduce((sum, s) => sum + Math.max(0, s.quantity ?? 0), 0);
+        const inStock = stocks.length > 0 ? variantStockTotal > 0 : true;
 
         return {
           name,
@@ -106,6 +108,7 @@ const resolveStorefrontColorVariants = (
           swatch: isFilledString(metaObj.swatch) ? metaObj.swatch : undefined,
           images,
           stocks,
+          inStock,
         };
       });
     if (derived.length > 0) return derived;
@@ -121,6 +124,8 @@ const resolveStorefrontColorVariants = (
         ? (variant.stocks as Array<{ size: string; quantity: number }>)
         : [];
       const stocks = applyLiveStock(name, initialStocks);
+      const variantStockTotal = stocks.reduce((sum, s) => sum + Math.max(0, s.quantity ?? 0), 0);
+      const inStock = stocks.length > 0 ? variantStockTotal > 0 : true;
 
       return {
         name,
@@ -129,6 +134,7 @@ const resolveStorefrontColorVariants = (
         swatch: isFilledString(variant.swatch) ? variant.swatch : undefined,
         images,
         stocks,
+        inStock,
       };
     });
   }
@@ -190,8 +196,10 @@ export const formatProductResponse = (
       )
     : 0;
 
-  // Derived stock total evaluates live variants (including carrier row), SKUs, and Postgres inventories
-  const derivedStockTotal = Math.max(rawVariantStock, rawSkuStock, inventoryStockTotal);
+  // Relational PostgreSQL ProductInventory is authoritative when loaded.
+  // Fallback to static JSON variant/SKU stock only when rawInventories is empty.
+  const derivedStockTotal =
+    rawInventories.length > 0 ? inventoryStockTotal : Math.max(rawVariantStock, rawSkuStock);
 
   // Stock is read BEFORE the carrier is dropped: a colourless product holds its
   // quantity on the carrier row, and that is exactly the stock the storefront

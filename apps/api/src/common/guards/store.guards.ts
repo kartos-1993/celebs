@@ -50,6 +50,30 @@ export const requireSellerContext = (req: Request, _res: Response, next: NextFun
 };
 
 /**
+ * Route is dedicated strictly to the seller store surface (/store/*).
+ * Enforces that actor is VENDOR or linked STAFF with req.store present.
+ * Directs platform actors (ADMIN/SUPERADMIN) to use /admin surfaces.
+ */
+export const requireSellerSurface = (req: Request, _res: Response, next: NextFunction) => {
+  const { actor, store } = req;
+  if (!actor) {
+    return next(new UnauthorizedException('Authentication required'));
+  }
+  if (isPlatformActor(actor)) {
+    return next(
+      new ForbiddenException(
+        'Platform administrators must use the /admin surface to manage catalog resources.',
+        ErrorCode.SELLER_CONTEXT_REQUIRED,
+      ),
+    );
+  }
+  if (!isSellerRole(actor) || !store) {
+    return next(noStoreError(actor.role));
+  }
+  next();
+};
+
+/**
  * Seller email-verification check shared by `requireStoreState` and the
  * standalone `requireVerifiedEmail` middleware. Returns null when satisfied.
  */

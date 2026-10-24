@@ -51,6 +51,9 @@ const row = {
 function serviceWith(rowValue: unknown, listValue: unknown[] = []) {
   const products = {
     findDetailedById: vi.fn().mockResolvedValue(rowValue),
+    findPublicDetailById: vi.fn().mockResolvedValue(rowValue),
+    findStoreDetailById: vi.fn().mockResolvedValue(rowValue),
+    findAdminDetailById: vi.fn().mockResolvedValue(rowValue),
     findManyList: vi.fn().mockResolvedValue(listValue),
     count: vi.fn().mockResolvedValue(listValue.length),
   };
@@ -85,6 +88,7 @@ describe('Response shapes per consumer', () => {
       // Live stock derivation: product with empty colorVariants derives inStock
       // from its SKU inventory (skus have stock 4 and 6), evaluating to true.
       inStock: true,
+      stockStatus: 'IN_STOCK',
       status: 'published',
       vendorId: 'v1',
     });
@@ -123,6 +127,7 @@ describe('Response shapes per consumer', () => {
         'ratingCount',
         'sizes',
         'status',
+        'stockStatus',
         'subcategory',
         'vendorId',
         'warrantyPeriod',
@@ -166,6 +171,7 @@ describe('Response shapes per consumer', () => {
         'price',
         'ratingAverage',
         'ratingCount',
+        'stockStatus',
       ].sort(),
     );
   });
@@ -216,5 +222,40 @@ describe('Response shapes per consumer', () => {
       stockTotal: 4,
       category: { id: 'c1', name: 'Denim', imageUrl: 'cat.jpg' },
     });
+  });
+
+  it('calculates server-driven stock urgency messages accurately for low inventory', async () => {
+    const lowStockRow4 = {
+      ...row,
+      skus: [{ skuCode: 'A', price: 2100, stock: 4 }],
+    };
+    const { service: service4 } = serviceWith(null, [lowStockRow4]);
+    const res4 = await service4.getAllProducts({}, 1, 10, {});
+    const card4 = shape(res4.products[0]);
+    expect(card4.stockStatus).toBe('LOW_STOCK');
+    expect(card4.remainingUnits).toBe(4);
+    expect(card4.stockUrgencyMessage).toBe('Only 4 remaining');
+
+    const lowStockRow5 = {
+      ...row,
+      skus: [{ skuCode: 'A', price: 2100, stock: 5 }],
+    };
+    const { service: service5 } = serviceWith(null, [lowStockRow5]);
+    const res5 = await service5.getAllProducts({}, 1, 10, {});
+    const card5 = shape(res5.products[0]);
+    expect(card5.stockStatus).toBe('LOW_STOCK');
+    expect(card5.remainingUnits).toBe(5);
+    expect(card5.stockUrgencyMessage).toBe('Less than 5 remaining');
+
+    const lowStockRow1 = {
+      ...row,
+      skus: [{ skuCode: 'A', price: 2100, stock: 1 }],
+    };
+    const { service: service1 } = serviceWith(null, [lowStockRow1]);
+    const res1 = await service1.getAllProducts({}, 1, 10, {});
+    const card1 = shape(res1.products[0]);
+    expect(card1.stockStatus).toBe('LOW_STOCK');
+    expect(card1.remainingUnits).toBe(1);
+    expect(card1.stockUrgencyMessage).toBe('Only 1 remaining');
   });
 });

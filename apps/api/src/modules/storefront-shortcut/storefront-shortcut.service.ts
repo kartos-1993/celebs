@@ -222,6 +222,42 @@ export class StorefrontShortcutService {
       });
     }
 
+    const drawerFilters: Array<{
+      id: string;
+      title: string;
+      type: string;
+      options: Array<{ label: string; value: string }>;
+    }> = [];
+
+    if (Array.isArray(category.attributes)) {
+      for (const attr of category.attributes as Array<Record<string, unknown>>) {
+        if (!attr || typeof attr !== 'object') continue;
+        const name = typeof attr.name === 'string' ? attr.name : '';
+        const id = typeof attr.id === 'string' ? attr.id : name.toLowerCase();
+        const type = typeof attr.type === 'string' ? attr.type : 'select';
+        const optionsRaw = Array.isArray(attr.options) ? attr.options : [];
+        const options = optionsRaw
+          .map((opt) => {
+            if (typeof opt === 'string') return { label: opt, value: opt };
+            const o = (opt ?? {}) as Record<string, unknown>;
+            return {
+              label: String(o.label || o.value || o.name || ''),
+              value: String(o.value || o.name || o.label || ''),
+            };
+          })
+          .filter((o) => Boolean(o.value));
+
+        if (name && options.length > 0) {
+          drawerFilters.push({
+            id,
+            title: name,
+            type,
+            options,
+          });
+        }
+      }
+    }
+
     return {
       category: {
         id: category.id,
@@ -231,7 +267,7 @@ export class StorefrontShortcutService {
         imageUrl: category.imageUrl || null,
       },
       shortcuts,
-      drawerFilters: [],
+      drawerFilters,
     };
   }
 

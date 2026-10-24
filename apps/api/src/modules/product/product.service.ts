@@ -46,6 +46,7 @@ import {
   PLATFORM_VENDOR_ID,
   PLATFORM_VENDOR_NAME,
 } from '@/common/constants/platform-vendor';
+import type { Actor } from '@/common/context/actor-context';
 
 export type CreateProductInput = CreateProductType;
 export type ProductMeasurementInput = ProductMeasurementType;
@@ -83,6 +84,30 @@ export class ProductService {
 
   async getProducts(filters: ProductFilterType, opts: QueryServiceOptions = {}) {
     return this.queryService.getProducts(filters, opts);
+  }
+
+  async getPublicProducts(filters: ProductFilterType) {
+    return this.queryService.getPublicProducts(filters);
+  }
+
+  async getPublicProductById(id: string) {
+    return this.queryService.getPublicProductById(id);
+  }
+
+  async getStoreProducts(filters: ProductFilterType, storeId: string, actor: Actor) {
+    return this.queryService.getStoreProducts(filters, storeId, actor);
+  }
+
+  async getStoreProductById(id: string, storeId: string) {
+    return this.queryService.getStoreProductById(id, storeId);
+  }
+
+  async getAdminProducts(filters: ProductFilterType, actor: Actor) {
+    return this.queryService.getAdminProducts(filters, actor);
+  }
+
+  async getAdminProductById(id: string) {
+    return this.queryService.getAdminProductById(id);
   }
 
   async getProductById(id: string, isElevated = false) {
@@ -386,7 +411,11 @@ export class ProductService {
     await this.reconcileMediaUsageDiff(product, updateData, id);
 
     purgeProduct(id);
-    if (isVisibilityFlip(product.status, updated.status)) {
+    if (
+      isVisibilityFlip(product.status, updated.status) ||
+      product.status === PRODUCT_STATUS.PUBLISHED ||
+      updated.status === PRODUCT_STATUS.PUBLISHED
+    ) {
       purgeProductLists();
     }
 
