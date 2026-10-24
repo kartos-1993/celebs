@@ -9,8 +9,12 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 import {
   archiveProduct,
   createProduct,
+  getAdminProducts,
+  getAdminVendorsList,
+  getDropdownCategoryTree,
   getProductReviewQueue,
   getProducts,
+  getStoreProducts,
   PRODUCT_QUERY_KEYS,
   reviewProduct,
   submitProductForReview,
@@ -41,13 +45,28 @@ export function useProductSelectorQuery(search?: string, enabled = true) {
   });
 }
 
-export function useProductsQuery(filters: ProductFilterRequest, enabled = true) {
+export function useProductsQuery(
+  filters: ProductFilterRequest,
+  options?: boolean | { isSeller?: boolean; enabled?: boolean },
+) {
+  const isSeller = typeof options === 'object' ? Boolean(options.isSeller) : false;
+  const enabled = typeof options === 'boolean' ? options : (options?.enabled ?? true);
+  const surface = isSeller ? 'store' : 'admin';
+
   return useQuery({
-    queryKey: PRODUCT_QUERY_KEYS.list(filters),
-    queryFn: () => getProducts(filters),
+    queryKey: PRODUCT_QUERY_KEYS.list(filters, surface),
+    queryFn: () => (isSeller ? getStoreProducts(filters) : getAdminProducts(filters)),
     enabled,
     placeholderData: keepPreviousData,
   });
+}
+
+export function useStoreProductsQuery(filters: ProductFilterRequest, enabled = true) {
+  return useProductsQuery(filters, { isSeller: true, enabled });
+}
+
+export function useAdminProductsQuery(filters: ProductFilterRequest, enabled = true) {
+  return useProductsQuery(filters, { isSeller: false, enabled });
 }
 
 export function useReviewQueueQuery(page: number, limit = 10, enabled = true) {
@@ -56,6 +75,24 @@ export function useReviewQueueQuery(page: number, limit = 10, enabled = true) {
     queryFn: () => getProductReviewQueue(page, limit),
     enabled,
     placeholderData: keepPreviousData,
+  });
+}
+
+export function useProductVendorsQuery(enabled = true) {
+  return useQuery({
+    queryKey: PRODUCT_QUERY_KEYS.vendorsSelector(),
+    queryFn: getAdminVendorsList,
+    enabled,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useProductCategoriesQuery(enabled = true) {
+  return useQuery({
+    queryKey: PRODUCT_QUERY_KEYS.categoryTree(),
+    queryFn: getDropdownCategoryTree,
+    enabled,
+    staleTime: 5 * 60 * 1000,
   });
 }
 

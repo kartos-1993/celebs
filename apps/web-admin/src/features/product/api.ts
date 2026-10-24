@@ -63,16 +63,29 @@ export function serializeQueryParams(params?: Record<string, unknown>): string {
 export const PRODUCT_QUERY_KEYS = {
   all: ['products'] as const,
   lists: () => [...PRODUCT_QUERY_KEYS.all, 'list'] as const,
-  list: (params: ProductFilterRequest) => [...PRODUCT_QUERY_KEYS.all, 'list', params] as const,
+  list: (params: ProductFilterRequest, surface?: string) =>
+    surface
+      ? ([...PRODUCT_QUERY_KEYS.all, 'list', surface, params] as const)
+      : ([...PRODUCT_QUERY_KEYS.all, 'list', params] as const),
+  storeList: (params: ProductFilterRequest) =>
+    [...PRODUCT_QUERY_KEYS.all, 'list', 'store', params] as const,
+  adminList: (params: ProductFilterRequest) =>
+    [...PRODUCT_QUERY_KEYS.all, 'list', 'admin', params] as const,
   selector: (search?: string) => [...PRODUCT_QUERY_KEYS.all, 'selector', search] as const,
   reviewQueues: () => [...PRODUCT_QUERY_KEYS.all, 'review-queue'] as const,
   reviewQueue: (page: number, limit: number) =>
     [...PRODUCT_QUERY_KEYS.all, 'review-queue', { page, limit }] as const,
   details: () => [...PRODUCT_QUERY_KEYS.all, 'detail'] as const,
-  detail: (id: string) => [...PRODUCT_QUERY_KEYS.all, 'detail', id] as const,
+  detail: (id: string, surface?: string) =>
+    surface
+      ? ([...PRODUCT_QUERY_KEYS.all, 'detail', surface, id] as const)
+      : ([...PRODUCT_QUERY_KEYS.all, 'detail', id] as const),
+  storeDetail: (id: string) => [...PRODUCT_QUERY_KEYS.all, 'detail', 'store', id] as const,
+  adminDetail: (id: string) => [...PRODUCT_QUERY_KEYS.all, 'detail', 'admin', id] as const,
   categoryTree: () => [...PRODUCT_QUERY_KEYS.all, 'category-tree'] as const,
   categoryRecent: () => [...PRODUCT_QUERY_KEYS.all, 'category-recent'] as const,
   categorySearch: (query: string) => [...PRODUCT_QUERY_KEYS.all, 'category-search', query] as const,
+  vendorsSelector: () => [...PRODUCT_QUERY_KEYS.all, 'vendors-selector'] as const,
   // Serialises `params` itself rather than taking a pre-serialised string: the
   // render schema hands `params` over as an inline object, so React Query would
   // see a new identity every render and re-key the cache each time. Serialising
@@ -101,9 +114,47 @@ export async function getProducts(
   return response.data;
 }
 
+export async function getStoreProducts(
+  filters?: ProductFilterRequest,
+): Promise<ProductApiResponse<PaginatedProductsResponse>> {
+  const response = await axiosClient.get<ProductApiResponse<PaginatedProductsResponse>>(
+    '/store/products',
+    { params: filters },
+  );
+  return response.data;
+}
+
+export async function getAdminProducts(
+  filters?: ProductFilterRequest,
+): Promise<ProductApiResponse<PaginatedProductsResponse>> {
+  const response = await axiosClient.get<ProductApiResponse<PaginatedProductsResponse>>(
+    '/admin/products',
+    { params: filters },
+  );
+  return response.data;
+}
+
 export async function getProductById(id: string): Promise<ProductApiResponse<AdminProductDetail>> {
   const response = await axiosClient.get<ProductApiResponse<AdminProductDetail>>(
     `${BASE_PATH}/${id}`,
+  );
+  return response.data;
+}
+
+export async function getStoreProductById(
+  id: string,
+): Promise<ProductApiResponse<AdminProductDetail>> {
+  const response = await axiosClient.get<ProductApiResponse<AdminProductDetail>>(
+    `/store/products/${id}`,
+  );
+  return response.data;
+}
+
+export async function getAdminProductById(
+  id: string,
+): Promise<ProductApiResponse<AdminProductDetail>> {
+  const response = await axiosClient.get<ProductApiResponse<AdminProductDetail>>(
+    `/admin/products/${id}`,
   );
   return response.data;
 }
@@ -199,6 +250,16 @@ export async function getDropdownCategoryTree(): Promise<ProductApiResponse<Cate
   const response = await axiosClient.get<ProductApiResponse<CategoryTreeNode[]>>(
     `${CATEGORY_BASE_PATH}/tree-with-attributes`,
   );
+  return response.data;
+}
+
+export async function getAdminVendorsList(): Promise<
+  ProductApiResponse<Array<{ id: string; shopName?: string; name?: string }>>
+> {
+  const response =
+    await axiosClient.get<
+      ProductApiResponse<Array<{ id: string; shopName?: string; name?: string }>>
+    >('/admin/vendors');
   return response.data;
 }
 
@@ -397,7 +458,11 @@ export function parseSubmitError(error: unknown): ParsedSubmitError {
 export const ProductApiService = {
   createProduct,
   getProducts,
+  getStoreProducts,
+  getAdminProducts,
   getProductById,
+  getStoreProductById,
+  getAdminProductById,
   updateProduct,
   getProductReviewQueue,
   submitProductForReview,

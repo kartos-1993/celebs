@@ -1,4 +1,8 @@
-import type { AdminProductListItem } from '@celebs/shared-types';
+import {
+  type AdminProductListItem,
+  PLATFORM_VENDOR_ID,
+  PLATFORM_VENDOR_NAME,
+} from '@celebs/shared-types';
 
 import type { PreviewFilters, ProductSortKey, StockState } from '../types';
 
@@ -97,6 +101,72 @@ export function uniqueVendors(products: AdminProductListItem[]): string[] {
 
 export function uniqueCategories(products: AdminProductListItem[]): string[] {
   return Array.from(new Set(products.map(getCategoryName))).sort();
+}
+
+export interface FilterSelectOption {
+  id: string;
+  label: string;
+}
+
+export function formatVendorOptions(
+  vendorsData?: Array<{ id: string; shopName?: string; name?: string }> | null,
+  fallbackProducts: AdminProductListItem[] = [],
+): FilterSelectOption[] {
+  const options: FilterSelectOption[] = [{ id: PLATFORM_VENDOR_ID, label: PLATFORM_VENDOR_NAME }];
+  const seen = new Set<string>([PLATFORM_VENDOR_ID]);
+
+  if (Array.isArray(vendorsData)) {
+    for (const v of vendorsData) {
+      if (v?.id && !seen.has(v.id)) {
+        seen.add(v.id);
+        options.push({ id: v.id, label: v.shopName || v.name || v.id });
+      }
+    }
+  }
+
+  for (const p of fallbackProducts) {
+    if (p.vendorName && !seen.has(p.vendorName)) {
+      seen.add(p.vendorName);
+      options.push({ id: p.vendorName, label: p.vendorName });
+    }
+  }
+
+  return options;
+}
+
+export function formatCategoryOptions(
+  tree?: Array<{ id: string; name: string; children?: Array<{ id: string; name: string }> }> | null,
+  fallbackProducts: AdminProductListItem[] = [],
+): FilterSelectOption[] {
+  const options: FilterSelectOption[] = [];
+  const seen = new Set<string>();
+
+  if (Array.isArray(tree)) {
+    for (const node of tree) {
+      if (!node) continue;
+      if (node.id && !seen.has(node.id)) {
+        seen.add(node.id);
+        options.push({ id: node.id, label: node.name });
+      }
+      if (Array.isArray(node.children)) {
+        for (const child of node.children) {
+          if (child?.id && !seen.has(child.id)) {
+            seen.add(child.id);
+            options.push({ id: child.id, label: `${node.name} > ${child.name}` });
+          }
+        }
+      }
+    }
+  }
+
+  for (const p of fallbackProducts) {
+    if (p.category?.id && !seen.has(p.category.id)) {
+      seen.add(p.category.id);
+      options.push({ id: p.category.id, label: p.category.name });
+    }
+  }
+
+  return options;
 }
 
 export function sumPrices(products: AdminProductListItem[]): number {

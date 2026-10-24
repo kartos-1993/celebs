@@ -1,10 +1,11 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import type { ProductQueueItem } from '../components/review-queue/types';
 import type { ProductFilterRequest, ReviewProductRequestPayload } from '../types';
 
 import { useProductMutations, useProductsQuery, useReviewQueueQuery } from './use-product-queries';
 
+import { useListQueryState } from '@/common/hooks/use-list-query-state';
 import { useDebounce } from '@/hooks/use-debounce';
 
 export type ReviewQueueTab = 'pending' | 'published' | 'rejected';
@@ -15,12 +16,31 @@ export const REVIEW_QUEUE_TABS: Array<{ value: ReviewQueueTab; label: string }> 
   { value: 'rejected', label: 'Rejected' },
 ];
 
+const REVIEW_TABS = ['pending', 'published', 'rejected'] as const;
+const REVIEW_SORTS = ['newest'] as const;
+
 export function useReviewQueueState() {
-  const [activeTab, setActiveTabState] = useState<ReviewQueueTab>('pending');
-  const [searchInput, setSearchInput] = useState('');
+  const listQueryState = useListQueryState({
+    defaultTab: 'pending' as ReviewQueueTab,
+    allowedTabs: REVIEW_TABS,
+    defaultSort: 'newest',
+    allowedSorts: REVIEW_SORTS,
+  });
+
+  const activeTab = listQueryState.tab as ReviewQueueTab;
+  const page = listQueryState.page;
+  const setPage = listQueryState.setPage;
+  const pageSize = listQueryState.limit;
+  const [searchInput, setSearchInput] = useState(listQueryState.q);
   const debouncedSearch = useDebounce(searchInput, 350);
-  const [page, setPageState] = useState(1);
-  const [pageSize, setPageSizeState] = useState(10);
+
+  useEffect(() => {
+    if (debouncedSearch.trim() !== listQueryState.q) listQueryState.setQ(debouncedSearch);
+  }, [debouncedSearch, listQueryState]);
+
+  useEffect(() => {
+    if (listQueryState.q !== searchInput) setSearchInput(listQueryState.q);
+  }, [listQueryState.q, searchInput]);
 
   const [selectedProduct, setSelectedProduct] = useState<ProductQueueItem | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
@@ -39,9 +59,9 @@ export function useReviewQueueState() {
   );
 
   const queueQuery = useReviewQueueQuery(page, pageSize, isPendingTab);
-  const listQuery = useProductsQuery(listFilters, !isPendingTab);
+  const productsQuery = useProductsQuery(listFilters, !isPendingTab);
 
-  const activeQuery = isPendingTab ? queueQuery : listQuery;
+  const activeQuery = isPendingTab ? queueQuery : productsQuery;
   const products = (activeQuery.data?.data?.products ?? []) as ProductQueueItem[];
   const total = activeQuery.data?.data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
@@ -83,16 +103,13 @@ export function useReviewQueueState() {
   };
 
   const setActiveTab = (tab: ReviewQueueTab) => {
-    setActiveTabState(tab);
-    setPageState(1);
-    setSearchInput('');
+    listQueryState.setTab(tab);
+    listQueryState.setPage(1);
   };
 
-  const setPage = (newPage: number) => setPageState(newPage);
-
   const setPageSize = (size: number) => {
-    setPageSizeState(size);
-    setPageState(1);
+    listQueryState.setLimit(size);
+    listQueryState.setPage(1);
   };
 
   return {

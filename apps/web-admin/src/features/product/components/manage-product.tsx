@@ -15,9 +15,7 @@ import { useAuthContext } from '@/context/auth-provider';
 import { usePermission } from '@/hooks/use-permission';
 
 export const ManageProduct: React.FC = () => {
-  const { user } = useAuthContext();
-  const isSellerOrStaff =
-    user?.role === 'VENDOR' || (user?.role === 'STAFF' && Boolean(user?.vendorId));
+  const { isSeller } = useAuthContext();
   const canCreate = usePermission(Permission.PRODUCT_CREATE);
   const canEdit = usePermission(Permission.PRODUCT_EDIT);
   const canDelete = usePermission(Permission.PRODUCT_DELETE);
@@ -25,7 +23,9 @@ export const ManageProduct: React.FC = () => {
   const state = useManageProductState();
   const [barcodeTarget, setBarcodeTarget] = useState<AdminProductListItem | null>(null);
 
-  const { data, isLoading, isFetching } = useProductsQuery(state.filterParams);
+  const { data, isLoading, isFetching } = useProductsQuery(state.filterParams, {
+    isSeller,
+  });
   const mutations = useProductMutations();
   const batch = useProductBatchMutations();
 
@@ -42,7 +42,7 @@ export const ManageProduct: React.FC = () => {
         total={total}
         isLoading={isLoading}
         isFetching={isFetching}
-        isSellerOrStaff={isSellerOrStaff}
+        isSellerOrStaff={isSeller}
         canCreate={canCreate}
         canEdit={canEdit}
         canDelete={canDelete}

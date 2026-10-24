@@ -4,8 +4,12 @@ import type { AdminProductListItem } from '@celebs/shared-types';
 
 import type { useManageProductState } from '../../hooks/use-manage-product-state';
 import type { useProductBatchMutations } from '../../hooks/use-product-batch-mutations';
-import type { useProductMutations } from '../../hooks/use-product-queries';
-import { uniqueCategories, uniqueVendors } from '../../utils/product-table-helpers';
+import {
+  useProductCategoriesQuery,
+  type useProductMutations,
+  useProductVendorsQuery,
+} from '../../hooks/use-product-queries';
+import { formatCategoryOptions, formatVendorOptions } from '../../utils/product-table-helpers';
 
 import { ManageProductBatchBar } from './manage-product-batch-bar';
 import { ManageProductFilterBar } from './manage-product-filter-bar';
@@ -42,8 +46,17 @@ export const ManageProductContent: React.FC<ManageProductContentProps> = ({
   batch,
   onPrintBarcodes,
 }) => {
-  const vendorOptions = useMemo(() => uniqueVendors(products), [products]);
-  const categoryOptions = useMemo(() => uniqueCategories(products), [products]);
+  const { data: vendorsData } = useProductVendorsQuery(!isSellerOrStaff);
+  const { data: categoriesData } = useProductCategoriesQuery();
+
+  const vendorOptions = useMemo(
+    () => formatVendorOptions(vendorsData?.data, products),
+    [vendorsData, products],
+  );
+  const categoryOptions = useMemo(
+    () => formatCategoryOptions(categoriesData?.data, products),
+    [categoriesData, products],
+  );
   const visibleProducts = useMemo(() => state.applyPreview(products), [products, state]);
 
   const { selectedItems, submittableCount, activatableCount, deactivatableCount } =
@@ -117,7 +130,7 @@ export const ManageProductContent: React.FC<ManageProductContentProps> = ({
         isSubmitPending={mutations.submitForReview.isPending}
         onToggleActivation={(id) => mutations.toggleActivation.mutate(id)}
         isTogglePending={mutations.toggleActivation.isPending}
-        onSetArchiveTarget={(target) => state.setArchiveTarget(target)}
+        onSetArchiveTarget={state.setArchiveTarget}
         onPrintBarcodes={onPrintBarcodes}
         searchQuery={state.debouncedSearch}
       />
@@ -127,7 +140,7 @@ export const ManageProductContent: React.FC<ManageProductContentProps> = ({
         totalPages={totalPages}
         total={total}
         pageSize={state.pageSize}
-        onPageChange={(newPage) => state.setPage(newPage)}
+        onPageChange={state.setPage}
         onPageSizeChange={state.setPageSize}
       />
     </div>

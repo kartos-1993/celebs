@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { AdminProductListItem, ProductStatus } from '@celebs/shared-types';
 
 import type { PreviewFilters, PreviewStockFilter, ProductSortKey } from '../types';
-import { applyPreviewFilters, sortKeyToParams } from '../utils/product-table-helpers';
+import { sortKeyToParams } from '../utils/product-table-helpers';
 
 import { useListQueryState } from '@/common/hooks/use-list-query-state';
 import { useDebounce } from '@/hooks/use-debounce';
@@ -65,9 +65,21 @@ export function useManageProductState() {
       limit: pageSize,
       search: debouncedSearch || undefined,
       status: filterStatus === 'all' ? undefined : (filterStatus as ProductStatus),
+      vendorId: previewVendor === 'all' ? undefined : previewVendor,
+      categoryId: previewCategory === 'all' ? undefined : previewCategory,
+      stockState: previewStock === 'all' ? undefined : previewStock,
       ...sortKeyToParams(sortKey),
     }),
-    [page, pageSize, debouncedSearch, filterStatus, sortKey],
+    [
+      page,
+      pageSize,
+      debouncedSearch,
+      filterStatus,
+      previewVendor,
+      previewCategory,
+      previewStock,
+      sortKey,
+    ],
   );
 
   const previewFilters: PreviewFilters = useMemo(
@@ -75,8 +87,7 @@ export function useManageProductState() {
     [previewVendor, previewCategory, previewStock],
   );
 
-  const applyPreview = (products: AdminProductListItem[]) =>
-    applyPreviewFilters(products, previewFilters);
+  const applyPreview = (products: AdminProductListItem[]) => products;
 
   const getSelectionCounts = (products: AdminProductListItem[]) => {
     const selectedItems = products.filter((p) => p.id && selectedProducts.includes(p.id));
@@ -100,18 +111,31 @@ export function useManageProductState() {
     setSelectedProducts((prev) => (checked ? [...prev, id] : prev.filter((item) => item !== id)));
   };
 
-  const setFilterStatus = (value: string) => listQuery.setTab(value as ProductStatus | 'all');
+  const setFilterStatus = (value: string) => {
+    listQuery.setTab(value as ProductStatus | 'all');
+    listQuery.setPage(1);
+  };
 
   const setSortKey = (key: ProductSortKey) => listQuery.setSort(key);
 
   const setPageSize = (size: number) => listQuery.setLimit(size);
 
-  const setPreviewVendor = (value: string) => listQuery.setExtra('vendor', value);
-  const setPreviewCategory = (value: string) => listQuery.setExtra('category', value);
-  const setPreviewStock = (value: PreviewStockFilter) => listQuery.setExtra('stock', value);
+  const setPreviewVendor = (value: string) => {
+    listQuery.setExtra('vendor', value);
+    listQuery.setPage(1);
+  };
+  const setPreviewCategory = (value: string) => {
+    listQuery.setExtra('category', value);
+    listQuery.setPage(1);
+  };
+  const setPreviewStock = (value: PreviewStockFilter) => {
+    listQuery.setExtra('stock', value);
+    listQuery.setPage(1);
+  };
 
   const resetPreviewFilters = () => {
     listQuery.setExtras({ vendor: 'all', category: 'all', stock: 'all' });
+    listQuery.setPage(1);
   };
 
   const previewActive =

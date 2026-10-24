@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -7,6 +8,9 @@ import { ManageProductContent } from '../manage-product-content';
 
 describe('ManageProductContent', () => {
   it('renders the filter search, table, and pagination chrome with identical copy', () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
     const state = {
       searchInput: '',
       setSearchInput: vi.fn(),
@@ -50,20 +54,22 @@ describe('ManageProductContent', () => {
     };
 
     render(
-      <ManageProductContent
-        state={state as never}
-        products={[]}
-        total={0}
-        isLoading={false}
-        isFetching={false}
-        isSellerOrStaff={false}
-        canCreate={false}
-        canEdit={false}
-        canDelete={false}
-        mutations={mutations as never}
-        batch={batch as never}
-        onPrintBarcodes={vi.fn()}
-      />,
+      <QueryClientProvider client={queryClient}>
+        <ManageProductContent
+          state={state as never}
+          products={[]}
+          total={0}
+          isLoading={false}
+          isFetching={false}
+          isSellerOrStaff={false}
+          canCreate={false}
+          canEdit={false}
+          canDelete={false}
+          mutations={mutations as never}
+          batch={batch as never}
+          onPrintBarcodes={vi.fn()}
+        />
+      </QueryClientProvider>,
     );
 
     expect(screen.getByRole('searchbox')).toBeDefined();

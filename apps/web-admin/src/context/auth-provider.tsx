@@ -20,6 +20,7 @@ export type AuthContextType = {
   isAdmin: boolean;
   isSuperAdmin: boolean;
   isStaff: boolean;
+  isSeller: boolean;
 };
 
 export const defaultAuthContext: AuthContextType = {
@@ -34,6 +35,7 @@ export const defaultAuthContext: AuthContextType = {
   isAdmin: false,
   isSuperAdmin: false,
   isStaff: false,
+  isSeller: false,
 };
 
 export const AuthContext = createContext<AuthContextType>(defaultAuthContext);
@@ -49,6 +51,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isAdmin = role === 'ADMIN';
   const isSuperAdmin = role === 'SUPERADMIN';
   const isStaff = role === 'STAFF';
+  const isSeller =
+    !isAdmin &&
+    !isSuperAdmin &&
+    (isVendor || isStaff || Boolean(user?.vendorProfile?.id || user?.vendorId));
 
   // ── Wire Axios interceptor callbacks into React auth state ────────────────
   useEffect(() => {
@@ -99,6 +105,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isAdmin,
         isSuperAdmin,
         isStaff,
+        isSeller,
       }}
     >
       {children}
