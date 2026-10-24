@@ -53,11 +53,11 @@ export function useManageProductState() {
 
   useEffect(() => {
     if (debouncedSearch.trim() !== listQuery.q) listQuery.setQ(debouncedSearch);
-  }, [debouncedSearch, listQuery]);
+  }, [debouncedSearch, listQuery.q, listQuery.setQ]);
 
   useEffect(() => {
     if (listQuery.q !== searchInput) setSearchInput(listQuery.q);
-  }, [listQuery.q, searchInput]);
+  }, [listQuery.q]);
 
   const filterParams = useMemo(
     () => ({
@@ -113,7 +113,6 @@ export function useManageProductState() {
 
   const setFilterStatus = (value: string) => {
     listQuery.setTab(value as ProductStatus | 'all');
-    listQuery.setPage(1);
   };
 
   const setSortKey = (key: ProductSortKey) => listQuery.setSort(key);
@@ -122,20 +121,16 @@ export function useManageProductState() {
 
   const setPreviewVendor = (value: string) => {
     listQuery.setExtra('vendor', value);
-    listQuery.setPage(1);
   };
   const setPreviewCategory = (value: string) => {
     listQuery.setExtra('category', value);
-    listQuery.setPage(1);
   };
   const setPreviewStock = (value: PreviewStockFilter) => {
     listQuery.setExtra('stock', value);
-    listQuery.setPage(1);
   };
 
   const resetPreviewFilters = () => {
     listQuery.setExtras({ vendor: 'all', category: 'all', stock: 'all' });
-    listQuery.setPage(1);
   };
 
   const previewActive =

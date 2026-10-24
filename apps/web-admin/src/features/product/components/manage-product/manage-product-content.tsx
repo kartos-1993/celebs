@@ -67,15 +67,9 @@ export const ManageProductContent: React.FC<ManageProductContentProps> = ({
     <div className="space-y-4">
       <ManageProductFilterBar
         searchInput={state.searchInput}
-        onSearch={(val) => {
-          state.setSearchInput(val);
-          state.setPage(1);
-        }}
+        onSearch={state.setSearchInput}
         filterStatus={state.filterStatus}
-        onStatus={(val) => {
-          state.setFilterStatus(val);
-          state.setPage(1);
-        }}
+        onStatus={state.setFilterStatus}
         sortKey={state.sortKey}
         onSortKey={state.setSortKey}
         vendorOptions={vendorOptions}

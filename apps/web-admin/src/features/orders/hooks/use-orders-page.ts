@@ -53,11 +53,11 @@ export function useOrdersPage() {
 
   useEffect(() => {
     if (debouncedQ.trim() !== listQuery.q) listQuery.setQ(debouncedQ);
-  }, [debouncedQ, listQuery]);
+  }, [debouncedQ, listQuery.q, listQuery.setQ]);
 
   useEffect(() => {
     if (listQuery.q !== searchQuery) setSearchQuery(listQuery.q);
-  }, [listQuery.q, searchQuery]);
+  }, [listQuery.q]);
 
   // AuthGuard guarantees a user before this hook mounts. Gate on the user
   // object (not the loading flag) so the first query already uses the final

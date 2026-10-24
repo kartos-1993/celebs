@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 interface ListQueryStateOptions<Tab extends string, Sort extends string> {
@@ -62,17 +62,28 @@ export function useListQueryState<Tab extends string, Sort extends string>(
     return record;
   }, [searchParams, extraKeys]);
 
+  const searchParamsRef = useRef(searchParams);
+  const pendingParamsRef = useRef<URLSearchParams | null>(null);
+
+  useEffect(() => {
+    searchParamsRef.current = searchParams;
+    pendingParamsRef.current = null;
+  }, [searchParams]);
+
   const update = useCallback(
     (patch: Record<string, string | undefined>, resetPage: boolean) => {
-      const next = new URLSearchParams(searchParams);
+      const base = pendingParamsRef.current ?? searchParamsRef.current;
+      const next = new URLSearchParams(base);
       for (const [key, value] of Object.entries(patch)) {
         if (value === undefined || value === '') next.delete(key);
         else next.set(key, value);
       }
       if (resetPage) next.delete('page');
+      pendingParamsRef.current = next;
+
       setSearchParams(next, { replace: true });
     },
-    [searchParams, setSearchParams],
+    [setSearchParams],
   );
 
   const setPage = useCallback(
@@ -91,7 +102,7 @@ export function useListQueryState<Tab extends string, Sort extends string>(
   const setSort = useCallback((value: Sort) => update({ sort: value }, true), [update]);
   const setExtra = useCallback(
     (key: string, value: string) =>
-      update({ [key]: value === 'all' || value === '' ? undefined : value }, false),
+      update({ [key]: value === 'all' || value === '' ? undefined : value }, true),
     [update],
   );
   const setExtras = useCallback(
@@ -100,24 +111,41 @@ export function useListQueryState<Tab extends string, Sort extends string>(
       for (const [key, value] of Object.entries(patch)) {
         normalized[key] = value === 'all' || value === '' ? undefined : value;
       }
-      update(normalized, false);
+      update(normalized, true);
     },
     [update],
   );
 
-  return {
-    page,
-    limit,
-    q,
-    tab,
-    sort,
-    extras,
-    setPage,
-    setLimit,
-    setQ,
-    setTab,
-    setSort,
-    setExtra,
-    setExtras,
-  };
+  return useMemo(
+    () => ({
+      page,
+      limit,
+      q,
+      tab,
+      sort,
+      extras,
+      setPage,
+      setLimit,
+      setQ,
+      setTab,
+      setSort,
+      setExtra,
+      setExtras,
+    }),
+    [
+      page,
+      limit,
+      q,
+      tab,
+      sort,
+      extras,
+      setPage,
+      setLimit,
+      setQ,
+      setTab,
+      setSort,
+      setExtra,
+      setExtras,
+    ],
+  );
 }

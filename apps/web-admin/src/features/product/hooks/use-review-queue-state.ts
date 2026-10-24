@@ -36,11 +36,11 @@ export function useReviewQueueState() {
 
   useEffect(() => {
     if (debouncedSearch.trim() !== listQueryState.q) listQueryState.setQ(debouncedSearch);
-  }, [debouncedSearch, listQueryState]);
+  }, [debouncedSearch, listQueryState.q, listQueryState.setQ]);
 
   useEffect(() => {
     if (listQueryState.q !== searchInput) setSearchInput(listQueryState.q);
-  }, [listQueryState.q, searchInput]);
+  }, [listQueryState.q]);
 
   const [selectedProduct, setSelectedProduct] = useState<ProductQueueItem | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
@@ -104,12 +104,10 @@ export function useReviewQueueState() {
 
   const setActiveTab = (tab: ReviewQueueTab) => {
     listQueryState.setTab(tab);
-    listQueryState.setPage(1);
   };
 
   const setPageSize = (size: number) => {
     listQueryState.setLimit(size);
-    listQueryState.setPage(1);
   };
 
   return {
