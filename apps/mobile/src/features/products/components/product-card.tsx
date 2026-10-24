@@ -78,6 +78,7 @@ export const ProductCard = React.memo(function ProductCard({
         hasDiscount={hasDiscount}
         discountPercent={discountPercent}
         isOutOfStock={isOutOfStock}
+        stockUrgencyMessage={product.stockUrgencyMessage}
         onPressIn={handlePressIn}
         onPress={handlePress}
         onAddToCart={handleAddToCart}

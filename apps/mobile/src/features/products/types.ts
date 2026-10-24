@@ -98,6 +98,9 @@ export interface Product {
   warrantyPeriod?: string | null;
   warrantyPolicy?: string | null;
   isNonReturnable?: boolean;
+  stockStatus?: 'IN_STOCK' | 'LOW_STOCK' | 'OUT_OF_STOCK';
+  remainingUnits?: number;
+  stockUrgencyMessage?: string;
 }
 
 export interface ProductFilterParams {
@@ -113,5 +116,9 @@ export interface ProductFilterParams {
   brandId?: string;
   sortBy?: 'createdAt' | 'price' | 'name';
   sortOrder?: 'asc' | 'desc';
+  sizes?: string[];
+  colors?: string[];
+  fits?: string[];
+  stockState?: 'all' | 'in' | 'low' | 'out' | 'IN_STOCK' | 'OUT_OF_STOCK';
   [key: string]: unknown;
 }

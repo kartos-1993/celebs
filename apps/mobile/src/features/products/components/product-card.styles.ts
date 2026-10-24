@@ -147,6 +147,20 @@ export const styles = StyleSheet.create({
     fontWeight: FontWeight.bold,
     lineHeight: responsiveFontSize(10),
   },
+  stockUrgencyBadge: {
+    backgroundColor: '#fff1f2',
+    paddingHorizontal: Spacing.xxs,
+    paddingVertical: 1,
+    borderRadius: 2,
+    borderWidth: 0.5,
+    borderColor: '#fecdd3',
+  },
+  stockUrgencyText: {
+    color: '#e11d48',
+    fontSize: responsiveFontSize(FontSize.micro),
+    fontWeight: FontWeight.bold,
+    lineHeight: responsiveFontSize(10),
+  },
 
   productName: {
     fontSize: responsiveFontSize(FontSize.caption),

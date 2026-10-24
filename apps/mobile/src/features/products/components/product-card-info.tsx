@@ -19,6 +19,7 @@ interface ProductCardInfoProps {
   hasDiscount: boolean;
   discountPercent: number;
   isOutOfStock: boolean;
+  stockUrgencyMessage?: string;
   onPressIn?: () => void;
   onPress: () => void;
   onAddToCart: (evt?: GestureResponderEvent) => void;
@@ -33,6 +34,7 @@ export function ProductCardInfo({
   hasDiscount,
   discountPercent,
   isOutOfStock,
+  stockUrgencyMessage,
   onPressIn,
   onPress,
   onAddToCart,
@@ -53,6 +55,11 @@ export function ProductCardInfo({
           <ThemedText style={[styles.storeText, { color: Palette.accent }]}>{storeName}</ThemedText>
           <ChevronRight size={9} color={Palette.accent} />
         </View>
+        {stockUrgencyMessage ? (
+          <View style={styles.stockUrgencyBadge}>
+            <ThemedText style={styles.stockUrgencyText}>{stockUrgencyMessage}</ThemedText>
+          </View>
+        ) : null}
       </View>
 
       <ThemedText numberOfLines={1} style={[styles.productName, { color: Palette.gray900 }]}>

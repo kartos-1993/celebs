@@ -83,9 +83,20 @@ export function useCategoryFilters(categorySlug: string) {
       search: searchQuery.trim() || undefined,
       minPrice: selectedPriceRange?.min,
       maxPrice: selectedPriceRange?.max,
+      sizes: selectedSizes.length > 0 ? selectedSizes : undefined,
+      colors: selectedColors.length > 0 ? selectedColors : undefined,
+      fits: selectedFits.length > 0 ? selectedFits : undefined,
       ...shortcutFilterParams(selectedStorefrontShortcut),
     }),
-    [categorySlug, searchQuery, selectedPriceRange, selectedStorefrontShortcut],
+    [
+      categorySlug,
+      searchQuery,
+      selectedPriceRange,
+      selectedSizes,
+      selectedColors,
+      selectedFits,
+      selectedStorefrontShortcut,
+    ],
   );
 
   const selectedStorefrontShortcutValue = selectedStorefrontShortcut?.value ?? null;
