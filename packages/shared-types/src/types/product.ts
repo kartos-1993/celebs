@@ -21,10 +21,11 @@ export const VENDOR_EDITABLE_STATUSES: readonly ProductStatus[] = [
   PRODUCT_STATUS.REJECTED,
 ];
 
-// ── Storefront Grid Card Contract (Exact 13 keys) ───────────────────────────
+// ── Storefront Grid Card Contract (Exact 13 keys + optional stock urgency) ────
 export interface StorefrontCardColorVariant {
   name: string;
   images: string[];
+  inStock?: boolean;
 }
 
 export interface StorefrontCard {
@@ -39,16 +40,20 @@ export interface StorefrontCard {
   ratingAverage?: number;
   ratingCount?: number;
   inStock: boolean;
+  stockStatus?: 'IN_STOCK' | 'LOW_STOCK' | 'OUT_OF_STOCK';
+  remainingUnits?: number;
+  stockUrgencyMessage?: string;
   colorVariants: StorefrontCardColorVariant[];
 }
 
-// ── Storefront PDP Detail Contract (Exact 19 keys) ──────────────────────────
+// ── Storefront PDP Detail Contract (Exact 19 keys + optional stock urgency) ──
 export interface StorefrontDetailColorVariant {
   name: string;
   colorCode?: string;
   swatch?: string;
   images: string[];
-  stocks?: Array<{ size: string; quantity: number }>;
+  stocks?: Array<{ size: string; quantity: number; inStock?: boolean; remainingUnits?: number }>;
+  inStock?: boolean;
 }
 
 export interface StorefrontDetailSize {
@@ -80,6 +85,9 @@ export interface StorefrontDetail {
   ratingAverage?: number;
   ratingCount?: number;
   inStock: boolean;
+  stockStatus?: 'IN_STOCK' | 'LOW_STOCK' | 'OUT_OF_STOCK';
+  remainingUnits?: number;
+  stockUrgencyMessage?: string;
   category: unknown;
   subcategory: unknown;
   status: string | null;

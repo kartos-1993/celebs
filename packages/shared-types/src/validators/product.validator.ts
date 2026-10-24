@@ -224,6 +224,18 @@ export const productReviewActionSchema = z.object({
 
 export type ProductReviewActionType = z.infer<typeof productReviewActionSchema>;
 
+const stringOrStringListSchema = z
+  .union([
+    z.string().transform((val) =>
+      val
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean),
+    ),
+    z.array(z.string()),
+  ])
+  .optional();
+
 // Schema for product search and filtering
 export const productFilterSchema = z.object({
   search: z.string().optional(),
@@ -236,6 +248,11 @@ export const productFilterSchema = z.object({
   campaign: z.string().optional(),
   brandId: idSchema.optional(),
   brand: z.string().optional(),
+  sizes: stringOrStringListSchema,
+  colors: stringOrStringListSchema,
+  fits: stringOrStringListSchema,
+  stockState: z.enum(['all', 'in', 'low', 'out']).optional(),
+  attributes: z.record(z.string(), z.string()).optional(),
   minPrice: z.coerce.number().optional(),
   maxPrice: z.coerce.number().optional(),
   status: z

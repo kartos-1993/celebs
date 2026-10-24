@@ -213,4 +213,30 @@ describe('Product Canonical Types (TDD Contract Specification)', () => {
     expect(paginated.products).toHaveLength(1);
     expect(paginated.products[0].name).toBe('Denim Overshirt');
   });
+
+  it('supports server-driven stock urgency on StorefrontCard and StorefrontDetail', () => {
+    const cardWithUrgency: StorefrontCard = {
+      id: 'prod-002',
+      name: 'Linen Summer Shirt',
+      brand: 'Celebs Studio',
+      price: 1800,
+      minPrice: 1800,
+      inStock: true,
+      stockStatus: 'LOW_STOCK',
+      remainingUnits: 3,
+      stockUrgencyMessage: 'Only 3 remaining',
+      colorVariants: [
+        {
+          name: 'Olive',
+          images: ['https://cdn.example.com/olive.webp'],
+          inStock: true,
+        },
+      ],
+    };
+
+    expect(cardWithUrgency.stockStatus).toBe('LOW_STOCK');
+    expect(cardWithUrgency.remainingUnits).toBe(3);
+    expect(cardWithUrgency.stockUrgencyMessage).toBe('Only 3 remaining');
+    expect(cardWithUrgency.colorVariants[0].inStock).toBe(true);
+  });
 });
