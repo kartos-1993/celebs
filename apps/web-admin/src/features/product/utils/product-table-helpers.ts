@@ -4,7 +4,7 @@ import {
   PLATFORM_VENDOR_NAME,
 } from '@celebs/shared-types';
 
-import type { PreviewFilters, ProductSortKey, StockState } from '../types';
+import type { PreviewFilters, PreviewStockFilter, ProductSortKey, StockState } from '../types';
 
 export function sortKeyToParams(sortKey: ProductSortKey): {
   sortBy: 'createdAt' | 'price' | 'name';
@@ -67,6 +67,14 @@ export function getStockState(total: number | null): StockState {
   if (total <= 0) return 'out';
   if (total < 10) return 'low';
   return 'in';
+}
+
+export function normalizeStockFilter(raw?: string | null): PreviewStockFilter {
+  if (!raw || raw === 'all') return 'all';
+  if (raw === 'in' || raw === 'in-stock') return 'in';
+  if (raw === 'low' || raw === 'low-stock') return 'low';
+  if (raw === 'out' || raw === 'out-of-stock') return 'out';
+  return 'all';
 }
 
 export function formatShortDate(value: unknown): string {

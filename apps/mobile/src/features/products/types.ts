@@ -119,6 +119,6 @@ export interface ProductFilterParams {
   sizes?: string[];
   colors?: string[];
   fits?: string[];
-  stockState?: 'all' | 'in' | 'low' | 'out' | 'IN_STOCK' | 'OUT_OF_STOCK';
+  stockState?: 'all' | 'in' | 'low' | 'out';
   [key: string]: unknown;
 }

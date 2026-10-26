@@ -251,7 +251,7 @@ export const productFilterSchema = z.object({
   sizes: stringOrStringListSchema,
   colors: stringOrStringListSchema,
   fits: stringOrStringListSchema,
-  stockState: z.enum(['all', 'in', 'low', 'out', 'IN_STOCK', 'OUT_OF_STOCK']).optional(),
+  stockState: z.enum(['all', 'in', 'low', 'out']).optional(),
   attributes: z.record(z.string(), z.string()).optional(),
   minPrice: z.coerce.number().optional(),
   maxPrice: z.coerce.number().optional(),

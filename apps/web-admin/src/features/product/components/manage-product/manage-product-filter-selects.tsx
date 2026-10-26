@@ -116,8 +116,9 @@ export const ManageProductFilterSelects: React.FC<ManageProductFilterSelectsProp
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">Stock: Any</SelectItem>
-          <SelectItem value="in-stock">In stock</SelectItem>
-          <SelectItem value="out-of-stock">Out of stock</SelectItem>
+          <SelectItem value="in">In stock</SelectItem>
+          <SelectItem value="low">Low stock</SelectItem>
+          <SelectItem value="out">Out of stock</SelectItem>
         </SelectContent>
       </Select>
 

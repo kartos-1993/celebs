@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { AdminProductListItem, ProductStatus } from '@celebs/shared-types';
 
 import type { PreviewFilters, PreviewStockFilter, ProductSortKey } from '../types';
-import { sortKeyToParams } from '../utils/product-table-helpers';
+import { normalizeStockFilter, sortKeyToParams } from '../utils/product-table-helpers';
 
 import { useListQueryState } from '@/common/hooks/use-list-query-state';
 import { useDebounce } from '@/hooks/use-debounce';
@@ -45,7 +45,7 @@ export function useManageProductState() {
   const debouncedSearch = useDebounce(searchInput, 350);
   const previewVendor = listQuery.extras.vendor ?? 'all';
   const previewCategory = listQuery.extras.category ?? 'all';
-  const previewStock = (listQuery.extras.stock ?? 'all') as PreviewStockFilter;
+  const previewStock = normalizeStockFilter(listQuery.extras.stock);
 
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [archiveTarget, setArchiveTarget] = useState<AdminProductListItem | null>(null);
