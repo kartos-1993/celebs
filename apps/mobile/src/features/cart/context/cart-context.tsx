@@ -37,10 +37,10 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     let isMounted = true;
     if (!isLoggedIn) {
       getGuestSessionId().then((id) => {
-        if (isMounted) {
-          setGuestId(id);
-        }
+        if (isMounted) setGuestId(id);
       });
+    } else {
+      setGuestId(null);
     }
     return () => {
       isMounted = false;
@@ -55,6 +55,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     error: queryError,
     refetch,
   } = useCartQuery(activeSessionId, { enabled: isQueryEnabled });
+
   const addToCartMutation = useAddToCartMutation(activeSessionId);
   const addComboToCartMutation = useAddComboToCartMutation(activeSessionId);
   const updateQuantityMutation = useUpdateCartQuantityMutation(activeSessionId);
@@ -72,9 +73,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const items = useMemo(() => cart?.items || [], [cart]);
 
   useEffect(() => {
-    if (items.length > 0) {
-      syncSelection(items);
-    }
+    if (items.length > 0) syncSelection(items);
   }, [items, syncSelection]);
 
   const selectedItems = useMemo(
@@ -87,19 +86,13 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     items.length > 0 && items.every((item) => selectedItemIds.includes(item.id));
 
   const handleAddToCart = useCallback(
-    async (input: AddToCartInput): Promise<void> => {
-      await addToCartMutation.mutateAsync(input);
-    },
+    (input: AddToCartInput) => addToCartMutation.mutateAsync(input),
     [addToCartMutation],
   );
-
   const handleAddComboToCart = useCallback(
-    async (input: AddComboToCartInput): Promise<void> => {
-      await addComboToCartMutation.mutateAsync(input);
-    },
+    (input: AddComboToCartInput) => addComboToCartMutation.mutateAsync(input),
     [addComboToCartMutation],
   );
-
   const handleUpdateQuantity = useCallback(
     async (itemId: string, newQuantity: number): Promise<void> => {
       if (newQuantity <= 0) {
@@ -110,17 +103,12 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     },
     [removeItemMutation, updateQuantityMutation],
   );
-
   const handleRemoveItem = useCallback(
-    async (id: string): Promise<void> => {
-      await removeItemMutation.mutateAsync(id);
-    },
+    (id: string) => removeItemMutation.mutateAsync(id),
     [removeItemMutation],
   );
-  const handleClearCart = useCallback(async (): Promise<void> => {
-    await clearCartMutation.mutateAsync();
-  }, [clearCartMutation]);
-  const handleRefreshCart = useCallback(async (): Promise<void> => {
+  const handleClearCart = useCallback(() => clearCartMutation.mutateAsync(), [clearCartMutation]);
+  const handleRefreshCart = useCallback(async () => {
     await refetch();
   }, [refetch]);
   const handleToggleAll = useCallback(() => toggleAllSelection(items), [toggleAllSelection, items]);

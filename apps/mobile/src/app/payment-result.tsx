@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { ThemedText } from '@/components/themed-text';
@@ -34,11 +34,23 @@ export default function PaymentResultScreen() {
   }, [params.status, router]);
 
   return (
-    <ThemedView style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-      <View style={{ gap: 12, alignItems: 'center' }}>
+    <ThemedView style={styles.container}>
+      <View style={styles.content}>
         <ActivityIndicator size="large" />
         <ThemedText>Confirming your payment…</ThemedText>
       </View>
     </ThemedView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  content: {
+    gap: 12,
+    alignItems: 'center',
+  },
+});

@@ -1,4 +1,4 @@
-import { ChangeEvent, useCallback, useEffect, useState } from 'react';
+import { ChangeEvent, useCallback, useEffect, useRef, useState } from 'react';
 
 import {
   StorefrontShortcut,
@@ -24,6 +24,13 @@ export function useStorefrontShortcutForm(
   const [currentShortcutId, setCurrentShortcutId] = useState<string | undefined>(undefined);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
+  const statusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (statusTimerRef.current) clearTimeout(statusTimerRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (shortcuts && shortcuts.length > 0) {
@@ -57,8 +64,11 @@ export function useStorefrontShortcutForm(
       };
 
       await saveShortcut(payload);
-      setStatusMessage('Storefront display settings saved successfully!');
-      setTimeout(() => setStatusMessage(null), 3000);
+      if (statusTimerRef.current) clearTimeout(statusTimerRef.current);
+      statusTimerRef.current = setTimeout(() => {
+        setStatusMessage(null);
+        statusTimerRef.current = null;
+      }, 3000);
     } catch (err: unknown) {
       const errObj = err as { message?: string };
       setStatusMessage(`Failed to save: ${errObj?.message || String(err)}`);

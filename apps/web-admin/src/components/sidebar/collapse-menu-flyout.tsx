@@ -36,6 +36,12 @@ export function CollapseMenuFlyout({ icon: Icon, label, submenus }: CollapseMenu
     setFlyoutOpen(false);
   }, [pathname]);
 
+  useEffect(() => {
+    return () => {
+      if (closeTimer.current) clearTimeout(closeTimer.current);
+    };
+  }, []);
+
   const openFlyout = useCallback(() => {
     if (closeTimer.current) {
       clearTimeout(closeTimer.current);

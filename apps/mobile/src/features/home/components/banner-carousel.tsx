@@ -5,7 +5,6 @@ import {
   Linking,
   NativeScrollEvent,
   NativeSyntheticEvent,
-  TouchableOpacity,
   View,
 } from 'react-native';
 
@@ -13,41 +12,16 @@ import { useBanners } from '../hooks/use-home-queries';
 import { styles } from '../styles/home.styles';
 import type { Banner } from '../types';
 
-import { MobileApparelImage } from '@/components/mobile-apparel-image';
+import { BannerSlide } from './banner-slide';
+
 import { showToast } from '@/components/toast/toast';
 import { Palette } from '@/constants/theme';
-
-interface BannerSlideProps {
-  banner: Banner;
-  onPress: (banner: Banner) => void;
-}
-
-/**
- * Dedicated, memoized FlatList renderer (mobile AGENTS.md §8): no inline JSX
- * render function, and the press handler is a stable prop instead of a
- * per-render closure.
- */
-const BannerSlide = React.memo(function BannerSlide({ banner, onPress }: BannerSlideProps) {
-  const handlePress = useCallback(() => onPress(banner), [onPress, banner]);
-
-  return (
-    <TouchableOpacity activeOpacity={0.95} onPress={handlePress} style={styles.bannerWrapper}>
-      <MobileApparelImage
-        src={banner.imageUrl}
-        preset="grid-card"
-        containerStyle={styles.bannerImage}
-        contentFit="cover"
-        alt={banner.title ?? 'Promotion'}
-      />
-    </TouchableOpacity>
-  );
-});
 
 export function BannerCarousel({ initialBanners }: { initialBanners?: Banner[] } = {}) {
   const [activeIndex, setActiveIndex] = useState(0);
 
   const flatListRef = useRef<FlatList>(null);
-  const autoPlayTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const autoPlayTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const { banners: queryBanners, loading: queryLoading } = useBanners();
   const banners = initialBanners && initialBanners.length > 0 ? initialBanners : queryBanners;
@@ -66,25 +40,27 @@ export function BannerCarousel({ initialBanners }: { initialBanners?: Banner[] }
     if (banners.length <= 1) return;
 
     autoPlayTimer.current = setInterval(() => {
-      const nextIndex = (activeIndex + 1) % banners.length;
-      setActiveIndex(nextIndex);
-      flatListRef.current?.scrollToIndex({
-        index: nextIndex,
-        animated: true,
+      setActiveIndex((prev) => {
+        const nextIndex = (prev + 1) % banners.length;
+        flatListRef.current?.scrollToIndex({
+          index: nextIndex,
+          animated: true,
+        });
+        return nextIndex;
       });
     }, 4000);
-  }, [activeIndex, banners.length, stopAutoPlay]);
+  }, [banners.length, stopAutoPlay]);
 
   useEffect(() => {
     return () => stopAutoPlay();
   }, [stopAutoPlay]);
 
   useEffect(() => {
-    if (banners.length > 0) {
+    if (banners.length > 1) {
       startAutoPlay();
     }
     return () => stopAutoPlay();
-  }, [banners, activeIndex, startAutoPlay, stopAutoPlay]);
+  }, [banners.length, startAutoPlay, stopAutoPlay]);
 
   const handleBannerPress = useCallback((banner: Banner) => {
     if (banner.linkType === 'NONE') return;
@@ -98,17 +74,13 @@ export function BannerCarousel({ initialBanners }: { initialBanners?: Banner[] }
     }
   }, []);
 
-  const onScroll = useCallback(
-    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-      const slideSize = event.nativeEvent.layoutMeasurement.width;
-      const index = event.nativeEvent.contentOffset.x / slideSize;
-      const roundIndex = Math.round(index);
-      if (roundIndex !== activeIndex) {
-        setActiveIndex(roundIndex);
-      }
-    },
-    [activeIndex],
-  );
+  const onScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const slideSize = event.nativeEvent.layoutMeasurement.width;
+    if (slideSize > 0) {
+      const index = Math.round(event.nativeEvent.contentOffset.x / slideSize);
+      setActiveIndex(index);
+    }
+  }, []);
 
   const renderBannerSlide = useCallback(
     ({ item }: { item: Banner }) => <BannerSlide banner={item} onPress={handleBannerPress} />,

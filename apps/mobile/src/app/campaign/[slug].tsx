@@ -1,7 +1,6 @@
 import React, { useCallback } from 'react';
 import {
   ActivityIndicator,
-  ImageBackground,
   StatusBar,
   TouchableOpacity,
   useColorScheme,
@@ -17,55 +16,12 @@ import { ThemedView } from '@/components/themed-view';
 import { Palette, Spacing } from '@/constants/theme';
 import { useCart } from '@/features/cart/context/cart-context';
 import { useCartSheet } from '@/features/cart/context/cart-sheet-context';
+import { CampaignHero } from '@/features/home/components/campaign-hero';
 import { useCountdown } from '@/features/home/hooks/use-countdown';
 import { useCampaign } from '@/features/home/hooks/use-home-queries';
 import { styles } from '@/features/home/styles/campaign.styles';
-import type { CampaignData, TimeRemaining } from '@/features/home/types';
 import { ProductCard } from '@/features/products/components/product-card';
 import { type Product, useProducts } from '@/features/products/hooks/use-products';
-import { hasRenderableImage, resolveImageUrl } from '@/utils/image';
-
-interface CampaignHeroProps {
-  campaign: CampaignData;
-  timeRemaining: TimeRemaining | null;
-}
-
-function CampaignHero({ campaign, timeRemaining }: CampaignHeroProps) {
-  const content = (
-    <View style={styles.heroContent}>
-      <ThemedText style={styles.heroEyebrow}>{campaign.campaignType} SALE</ThemedText>
-      <ThemedText style={styles.heroTitle}>{campaign.title}</ThemedText>
-      {campaign.tagline ? (
-        <ThemedText style={styles.heroTagline} numberOfLines={2}>
-          {campaign.tagline}
-        </ThemedText>
-      ) : null}
-      {timeRemaining && !timeRemaining.isExpired ? (
-        <ThemedText style={styles.heroCountdown}>
-          Ends in {timeRemaining.days}d {timeRemaining.hours}h {timeRemaining.minutes}m{' '}
-          {timeRemaining.seconds}s
-        </ThemedText>
-      ) : null}
-    </View>
-  );
-
-  const themeColor = campaign.themeColor || Palette.danger;
-
-  if (!hasRenderableImage(campaign.bannerImage)) {
-    return <View style={[styles.hero, { backgroundColor: themeColor }]}>{content}</View>;
-  }
-
-  return (
-    <ImageBackground
-      source={{ uri: resolveImageUrl(campaign.bannerImage, { preset: 'grid-card' }) }}
-      style={styles.hero}
-      imageStyle={styles.heroImage}
-    >
-      <View style={[styles.heroOverlay, { backgroundColor: themeColor }]} />
-      {content}
-    </ImageBackground>
-  );
-}
 
 export default function CampaignScreen() {
   const params = useLocalSearchParams<{ slug: string }>();

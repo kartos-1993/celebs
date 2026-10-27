@@ -26,7 +26,7 @@ export function useUpdateProfileMutation(onSuccess?: () => void) {
       await queryClient.invalidateQueries({
         queryKey: VENDOR_ONBOARDING_QUERY_KEYS.all,
       });
-      refetch();
+      await refetch();
       onSuccess?.();
     },
   });
@@ -45,7 +45,7 @@ export function useUpdateWarehouseMutation(onSuccess?: () => void) {
       await queryClient.invalidateQueries({
         queryKey: VENDOR_ONBOARDING_QUERY_KEYS.all,
       });
-      refetch();
+      await refetch();
       onSuccess?.();
     },
   });
@@ -64,7 +64,7 @@ export function useUpdateDocumentsMutation(onSuccess?: () => void) {
       await queryClient.invalidateQueries({
         queryKey: VENDOR_ONBOARDING_QUERY_KEYS.all,
       });
-      refetch();
+      await refetch();
       onSuccess?.();
     },
   });
@@ -83,7 +83,7 @@ export function useUpdateBusinessInfoMutation(onSuccess?: () => void) {
       await queryClient.invalidateQueries({
         queryKey: VENDOR_ONBOARDING_QUERY_KEYS.all,
       });
-      refetch();
+      await refetch();
       onSuccess?.();
     },
   });
@@ -102,7 +102,7 @@ export function useSubmitVendorMutation(onSuccess?: () => void) {
       await queryClient.invalidateQueries({
         queryKey: VENDOR_ONBOARDING_QUERY_KEYS.all,
       });
-      refetch();
+      await refetch();
       onSuccess?.();
     },
   });
@@ -121,7 +121,7 @@ export function useResubmitVendorMutation(onSuccess?: () => void) {
       await queryClient.invalidateQueries({
         queryKey: VENDOR_ONBOARDING_QUERY_KEYS.all,
       });
-      refetch();
+      await refetch();
       onSuccess?.();
     },
   });

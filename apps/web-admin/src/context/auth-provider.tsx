@@ -25,7 +25,7 @@ export type AuthContextType = {
   isLoading: boolean;
   isFetching: boolean;
   isAuthenticated: boolean;
-  refetch: () => void;
+  refetch: () => Promise<unknown>;
   role?: string;
   isVendor: boolean;
   isAdmin: boolean;
@@ -45,7 +45,7 @@ export const defaultAuthContext: AuthContextType = {
   isLoading: true,
   isFetching: false,
   isAuthenticated: false,
-  refetch: () => {},
+  refetch: () => Promise.resolve(),
   role: undefined,
   isVendor: false,
   isAdmin: false,
