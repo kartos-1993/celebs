@@ -558,10 +558,16 @@ export async function deleteS3Object(key: string): Promise<void> {
   }
 }
 
+export interface S3ObjectStreamResponse {
+  stream: NodeJS.ReadableStream | undefined;
+  contentType: string;
+  contentLength?: number;
+}
+
 /**
  * Retrieve an object stream from S3/R2 storage for CORS proxying.
  */
-export async function getS3ObjectStream(key: string) {
+export async function getS3ObjectStream(key: string): Promise<S3ObjectStreamResponse> {
   validateObjectKey(key);
   const command = new GetObjectCommand({
     Bucket: config.S3.BUCKET_NAME,
@@ -569,7 +575,7 @@ export async function getS3ObjectStream(key: string) {
   });
   const response = await s3Client.send(command);
   return {
-    stream: response.Body,
+    stream: response.Body as NodeJS.ReadableStream | undefined,
     contentType: response.ContentType || 'image/webp',
     contentLength: response.ContentLength,
   };

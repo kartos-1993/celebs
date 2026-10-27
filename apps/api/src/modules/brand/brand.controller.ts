@@ -21,18 +21,18 @@ import { sendCreated, sendSuccess } from '@/common/utils/response.util';
 export class BrandController {
   constructor(private brandService: BrandService = defaultBrandService) {}
 
-  getAllBrands = async (req: Request, res: Response, next: NextFunction) => {
+  getAllBrands = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const filters = brandFilterSchema.parse(req.query);
       const result = await this.brandService.getBrands(filters);
 
-      return sendSuccess(res, result, 'Brands retrieved successfully');
+      sendSuccess(res, result, 'Brands retrieved successfully');
     } catch (error) {
       next(error);
     }
   };
 
-  getBrandByIdOrSlug = async (req: Request, res: Response, next: NextFunction) => {
+  getBrandByIdOrSlug = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { id: idOrSlug } = getBrandParamSchema.parse(req.params);
       const brand = await this.brandService.getBrandByIdOrSlug(idOrSlug);
@@ -41,37 +41,37 @@ export class BrandController {
         throw new AppError('Brand not found', HTTPSTATUS.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND);
       }
 
-      return sendSuccess(res, brand, 'Brand retrieved successfully');
+      sendSuccess(res, brand, 'Brand retrieved successfully');
     } catch (error) {
       next(error);
     }
   };
 
-  createBrand = async (req: Request, res: Response, next: NextFunction) => {
+  createBrand = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       logger.debug({ body: req.body, user: req.user }, 'Create brand request received');
       const validatedData = createBrandSchema.parse(req.body);
       const brand = await this.brandService.createBrand(validatedData);
 
-      return sendCreated(res, brand, 'Brand created successfully');
+      sendCreated(res, brand, 'Brand created successfully');
     } catch (error) {
       next(error);
     }
   };
 
-  updateBrand = async (req: Request, res: Response, next: NextFunction) => {
+  updateBrand = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { id } = idParamSchema.parse(req.params);
       const validatedData = updateBrandSchema.parse(req.body);
       const brand = await this.brandService.updateBrand(id, validatedData);
 
-      return sendSuccess(res, brand, 'Brand updated successfully');
+      sendSuccess(res, brand, 'Brand updated successfully');
     } catch (error) {
       next(error);
     }
   };
 
-  submitAuthorization = async (req: Request, res: Response, next: NextFunction) => {
+  submitAuthorization = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const storeId = req.store?.id;
       if (!storeId) {
@@ -85,13 +85,13 @@ export class BrandController {
       const validatedData = createBrandAuthorizationSchema.parse(req.body);
       const auth = await this.brandService.submitAuthorization(storeId, validatedData);
 
-      return sendCreated(res, auth, 'Brand authorization submitted for review');
+      sendCreated(res, auth, 'Brand authorization submitted for review');
     } catch (error) {
       next(error);
     }
   };
 
-  getMyAuthorizations = async (req: Request, res: Response, next: NextFunction) => {
+  getMyAuthorizations = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const storeId = req.store?.id;
       if (!storeId) {
@@ -99,7 +99,8 @@ export class BrandController {
           const { vendorId } = getBrandAuthorizationsQuerySchema.parse(req.query);
           const auths = vendorId ? await this.brandService.getVendorAuthorizations(vendorId) : [];
 
-          return sendSuccess(res, auths, 'Brand authorizations retrieved successfully');
+          sendSuccess(res, auths, 'Brand authorizations retrieved successfully');
+          return;
         }
 
         throw new AppError(
@@ -111,24 +112,28 @@ export class BrandController {
 
       const auths = await this.brandService.getVendorAuthorizations(storeId);
 
-      return sendSuccess(res, auths, 'Seller brand authorizations retrieved successfully');
+      sendSuccess(res, auths, 'Seller brand authorizations retrieved successfully');
     } catch (error) {
       next(error);
     }
   };
 
-  getPendingAuthorizations = async (req: Request, res: Response, next: NextFunction) => {
+  getPendingAuthorizations = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> => {
     try {
       const { page, limit } = paginationQuerySchema.parse(req.query);
       const result = await this.brandService.getPendingAuthorizations(page, limit);
 
-      return sendSuccess(res, result, 'Pending brand authorizations retrieved successfully');
+      sendSuccess(res, result, 'Pending brand authorizations retrieved successfully');
     } catch (error) {
       next(error);
     }
   };
 
-  reviewAuthorization = async (req: Request, res: Response, next: NextFunction) => {
+  reviewAuthorization = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { id } = idParamSchema.parse(req.params);
       const adminUserId = req.actor?.userId;
@@ -142,7 +147,7 @@ export class BrandController {
       const validatedData = reviewBrandAuthorizationSchema.parse(req.body);
       const auth = await this.brandService.reviewAuthorization(id, adminUserId, validatedData);
 
-      return sendSuccess(
+      sendSuccess(
         res,
         auth,
         `Brand authorization ${validatedData.status.toLowerCase()} successfully`,

@@ -47,7 +47,8 @@ export function expectSharedCacheable(res: HeaderCarrier, minMaxAge = 0): void {
   if (minMaxAge > 0) {
     const match = lower.match(/max-age=(\d+)/);
     expect(match, 'max-age directive must be present in Cache-Control').not.toBeNull();
-    const maxAge = parseInt(match![1], 10);
+    const maxAgeRaw = match?.[1] ?? '0';
+    const maxAge = parseInt(maxAgeRaw, 10);
     expect(maxAge).toBeGreaterThanOrEqual(minMaxAge);
   }
 }
@@ -68,7 +69,8 @@ export function expectBrowserCacheable(res: HeaderCarrier, minMaxAge = 0): void 
   if (minMaxAge > 0) {
     const match = lower.match(/max-age=(\d+)/);
     expect(match, 'max-age directive must be present in Cache-Control').not.toBeNull();
-    const maxAge = parseInt(match![1], 10);
+    const maxAgeRaw = match?.[1] ?? '0';
+    const maxAge = parseInt(maxAgeRaw, 10);
     expect(maxAge).toBeGreaterThanOrEqual(minMaxAge);
   }
 }

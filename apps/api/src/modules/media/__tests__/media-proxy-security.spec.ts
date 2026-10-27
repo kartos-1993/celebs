@@ -20,7 +20,7 @@ describe('Media Proxy KYC Access Control and Cache-Control Headers Contract', ()
     controller = new MediaController();
     findAssetByKeySpy = vi.spyOn(mediaRepository, 'findAssetByKey');
     getS3ObjectStreamSpy = vi.spyOn(storageService, 'getS3ObjectStream').mockResolvedValue({
-      stream: Readable.from([Buffer.from('fake-image-bytes')]) as unknown as NodeJS.ReadableStream,
+      stream: Readable.from([Buffer.from('fake-image-bytes')]),
       contentType: 'image/jpeg',
       contentLength: 1024,
     });
@@ -31,20 +31,18 @@ describe('Media Proxy KYC Access Control and Cache-Control Headers Contract', ()
   });
 
   function createMockResponse() {
-    const res = new PassThrough() as unknown as Response & {
-      headers: Record<string, string | number>;
-    };
     const headers: Record<string, string | number> = {};
-    res.headers = headers;
-    res.setHeader = vi.fn((key: string, value: string | number) => {
-      headers[key.toLowerCase()] = value;
-      return res;
-    }) as unknown as Response['setHeader'];
-    res.getHeader = vi.fn(
-      (key: string) => headers[key.toLowerCase()],
-    ) as unknown as Response['getHeader'];
-    res.status = vi.fn().mockReturnThis() as unknown as Response['status'];
-    res.json = vi.fn() as unknown as Response['json'];
+    const stream = new PassThrough();
+    const res = Object.assign(stream, {
+      headers,
+      setHeader: vi.fn((key: string, value: string | number) => {
+        headers[key.toLowerCase()] = value;
+        return res;
+      }),
+      getHeader: vi.fn((key: string) => headers[key.toLowerCase()]),
+      status: vi.fn(() => res),
+      json: vi.fn(() => res),
+    }) as unknown as Response & { headers: Record<string, string | number> };
     return res;
   }
 

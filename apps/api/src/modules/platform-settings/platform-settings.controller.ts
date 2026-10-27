@@ -17,26 +17,26 @@ import { sendSuccess } from '@/common/utils/response.util';
 export class PlatformSettingsController {
   constructor(private service: PlatformSettingsService = platformSettingsService) {}
 
-  getPublicSettings = async (_req: Request, res: Response, next: NextFunction) => {
+  getPublicSettings = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const result = await this.service.getPublicSettings();
-      return sendSuccess(res, result, 'Public settings retrieved successfully');
+      sendSuccess(res, result, 'Public settings retrieved successfully');
     } catch (error) {
       next(error);
     }
   };
 
-  getAllSettings = async (req: Request, res: Response, next: NextFunction) => {
+  getAllSettings = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { group } = getPlatformSettingsQuerySchema.parse(req.query);
       const settings = await this.service.getAllSettings(group);
-      return sendSuccess(res, settings, 'All platform settings retrieved successfully');
+      sendSuccess(res, settings, 'All platform settings retrieved successfully');
     } catch (error) {
       next(error);
     }
   };
 
-  getSettingByKey = async (req: Request, res: Response, next: NextFunction) => {
+  getSettingByKey = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { key } = settingKeyParamSchema.parse(req.params);
       const setting = await this.service.getSettingByKey(key);
@@ -47,13 +47,13 @@ export class PlatformSettingsController {
           ErrorCode.RESOURCE_NOT_FOUND,
         );
       }
-      return sendSuccess(res, setting, 'Setting retrieved successfully');
+      sendSuccess(res, setting, 'Setting retrieved successfully');
     } catch (error) {
       next(error);
     }
   };
 
-  upsertSetting = async (req: Request, res: Response, next: NextFunction) => {
+  upsertSetting = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const validated = upsertPlatformSettingSchema.parse(req.body);
       const userId = req.actor?.userId || req.user?.id;
@@ -72,43 +72,43 @@ export class PlatformSettingsController {
         validated.reason,
       );
 
-      return sendSuccess(res, setting, `Setting "${validated.key}" created/updated successfully`);
+      sendSuccess(res, setting, `Setting "${validated.key}" created/updated successfully`);
     } catch (error) {
       next(error);
     }
   };
 
-  updateSetting = async (req: Request, res: Response, next: NextFunction) => {
+  updateSetting = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { key } = settingKeyParamSchema.parse(req.params);
       const { value, reason } = updatePlatformSettingSchema.parse(req.body);
       const userId = req.actor?.userId || req.user?.id;
       const updated = await this.service.updateSetting(key, value, userId, reason);
 
-      return sendSuccess(res, updated, `Setting "${key}" updated successfully`);
+      sendSuccess(res, updated, `Setting "${key}" updated successfully`);
     } catch (error) {
       next(error);
     }
   };
 
-  bulkUpdateSettings = async (req: Request, res: Response, next: NextFunction) => {
+  bulkUpdateSettings = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { settings, reason } = bulkUpdatePlatformSettingsSchema.parse(req.body);
       const userId = req.actor?.userId || req.user?.id;
       const updated = await this.service.bulkUpdateSettings(settings, userId, reason);
 
-      return sendSuccess(res, updated, `${updated.length} settings updated successfully`);
+      sendSuccess(res, updated, `${updated.length} settings updated successfully`);
     } catch (error) {
       next(error);
     }
   };
 
-  getAuditLogs = async (req: Request, res: Response, next: NextFunction) => {
+  getAuditLogs = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { key, limit } = getPlatformSettingAuditLogsQuerySchema.parse(req.query);
       const logs = await this.service.getAuditLogs(key, limit);
 
-      return sendSuccess(res, logs, 'Platform setting audit logs retrieved successfully');
+      sendSuccess(res, logs, 'Platform setting audit logs retrieved successfully');
     } catch (error) {
       next(error);
     }

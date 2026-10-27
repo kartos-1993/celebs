@@ -85,4 +85,37 @@ describe('computeSellerTotals', () => {
 
     expect(totals.grossSales.toFixed(2)).toBe('300.00');
   });
+
+  it('nets reversed commission entries pointing IN against charged commission pointing OUT', () => {
+    const totals = computeSellerTotals([
+      row(LedgerEntryType.ORDER_REVENUE, LedgerDirection.IN, '1000.00'),
+      row(LedgerEntryType.COMMISSION, LedgerDirection.OUT, '150.00'),
+      row(LedgerEntryType.REFUND, LedgerDirection.OUT, '1000.00'),
+      // Commission returned to seller on refund (direction IN)
+      row(LedgerEntryType.COMMISSION, LedgerDirection.IN, '150.00'),
+    ]);
+
+    expect(totals.grossSales.toFixed(2)).toBe('1000.00');
+    // Net commission should be 150.00 - 150.00 = 0.00
+    expect(totals.commission.toFixed(2)).toBe('0.00');
+    expect(totals.refunds.toFixed(2)).toBe('1000.00');
+    // Net payable should be 1000 - 0 - 1000 = 0.00, rather than -150.00
+    expect(totals.netPayable.toFixed(2)).toBe('0.00');
+  });
+
+  it('calculates partial commission reversal netting correctly', () => {
+    const totals = computeSellerTotals([
+      row(LedgerEntryType.ORDER_REVENUE, LedgerDirection.IN, '2000.00'),
+      row(LedgerEntryType.COMMISSION, LedgerDirection.OUT, '300.00'),
+      row(LedgerEntryType.REFUND, LedgerDirection.OUT, '500.00'),
+      // Partial commission returned on partial refund
+      row(LedgerEntryType.COMMISSION, LedgerDirection.IN, '75.00'),
+    ]);
+
+    // Net commission: 300.00 - 75.00 = 225.00
+    expect(totals.commission.toFixed(2)).toBe('225.00');
+    expect(totals.refunds.toFixed(2)).toBe('500.00');
+    // Net payable: 2000 - 225 - 500 = 1275.00
+    expect(totals.netPayable.toFixed(2)).toBe('1275.00');
+  });
 });

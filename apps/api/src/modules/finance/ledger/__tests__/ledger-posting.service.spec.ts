@@ -54,6 +54,77 @@ async function seedOrder(overrides: Record<string, unknown> = {}) {
   });
 }
 
+async function seedOrderWithLine(subtotal: number, commissionAmount: number) {
+  const order = await seedOrder({ subtotal, shippingFee: 0, totalAmount: subtotal });
+  const vendor = await prisma.vendorProfile.create({
+    data: {
+      userId: (
+        await prisma.user.create({
+          data: {
+            name: 'Line Seller',
+            email: `lineseller-${Date.now()}-${Math.random()}@example.com`,
+            password: 'Password123!',
+          },
+        })
+      ).id,
+      phoneNumber: `98${Date.now()}`.slice(0, 10),
+      shopName: `Line Shop ${Date.now()}${Math.random().toString(36).slice(2, 6)}`,
+      panNumber: `P${Date.now()}${Math.random().toString(36).slice(2, 8)}`
+        .toUpperCase()
+        .slice(0, 10),
+      citizenshipNumber: `C${Date.now()}${Math.random().toString(36).slice(2, 8)}`
+        .toUpperCase()
+        .slice(0, 14),
+    },
+  });
+
+  await prisma.orderItem.create({
+    data: {
+      orderId: order.id,
+      inventoryId: (
+        await prisma.productInventory.create({
+          data: {
+            productId: (
+              await prisma.product.create({
+                data: {
+                  name: 'Commission Test Product',
+                  slug: `commission-test-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+                  categoryId: (
+                    await prisma.category.create({
+                      data: {
+                        name: `CC-${Date.now()}`,
+                        slug: `cc-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+                      },
+                    })
+                  ).id,
+                  vendorId: vendor.id,
+                  price: subtotal,
+                },
+              })
+            ).id,
+            colorVariantName: 'Default',
+            size: 'M',
+            sku: `COMM-SKU-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+            quantity: 10,
+            reservedQuantity: 0,
+          },
+        })
+      ).id,
+      vendorId: vendor.id,
+      productName: 'Commission Test Product',
+      colorVariantName: 'Default',
+      size: 'M',
+      unitPrice: subtotal,
+      quantity: 1,
+      subtotal,
+      commissionAmount,
+      sellerNetAmount: subtotal - commissionAmount,
+    },
+  });
+
+  return { order, vendor };
+}
+
 describe('posting an order placement to the ledger', () => {
   beforeEach(async () => {
     await prisma.ledgerEntry.deleteMany({});
@@ -178,6 +249,22 @@ describe('posting an order placement to the ledger', () => {
     // 5200 taken, 180 of delivery given away.
     expect(net.toNumber()).toBe(5020);
   });
+
+  it('attributes revenue per order line and vendor when order lines exist', async () => {
+    const { order, vendor: firstVendor } = await seedOrderWithLine(1000, 75);
+
+    await postOrderPlacementEntries({ orderId: order.id });
+
+    const entries = await prisma.ledgerEntry.findMany({
+      where: { orderId: order.id, type: LedgerEntryType.ORDER_REVENUE },
+    });
+
+    expect(entries).toHaveLength(1);
+    expect(entries[0]?.amount.toNumber()).toBe(1000);
+    expect(entries[0]?.direction).toBe(LedgerDirection.IN);
+    expect(entries[0]?.vendorId).toBe(firstVendor.id);
+    expect(entries[0]?.sourceType).toBe('ORDER_ITEM');
+  });
 });
 
 /**
@@ -193,77 +280,6 @@ describe('posting commission to the ledger', () => {
   beforeEach(async () => {
     await prisma.ledgerEntry.deleteMany({});
   });
-
-  async function seedOrderWithLine(subtotal: number, commissionAmount: number) {
-    const order = await seedOrder({ subtotal, shippingFee: 0, totalAmount: subtotal });
-    const vendor = await prisma.vendorProfile.create({
-      data: {
-        userId: (
-          await prisma.user.create({
-            data: {
-              name: 'Line Seller',
-              email: `lineseller-${Date.now()}-${Math.random()}@example.com`,
-              password: 'Password123!',
-            },
-          })
-        ).id,
-        phoneNumber: `98${Date.now()}`.slice(0, 10),
-        shopName: `Line Shop ${Date.now()}${Math.random().toString(36).slice(2, 6)}`,
-        panNumber: `P${Date.now()}${Math.random().toString(36).slice(2, 8)}`
-          .toUpperCase()
-          .slice(0, 10),
-        citizenshipNumber: `C${Date.now()}${Math.random().toString(36).slice(2, 8)}`
-          .toUpperCase()
-          .slice(0, 14),
-      },
-    });
-
-    await prisma.orderItem.create({
-      data: {
-        orderId: order.id,
-        inventoryId: (
-          await prisma.productInventory.create({
-            data: {
-              productId: (
-                await prisma.product.create({
-                  data: {
-                    name: 'Commission Test Product',
-                    slug: `commission-test-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-                    categoryId: (
-                      await prisma.category.create({
-                        data: {
-                          name: `CC-${Date.now()}`,
-                          slug: `cc-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-                        },
-                      })
-                    ).id,
-                    vendorId: vendor.id,
-                    price: subtotal,
-                  },
-                })
-              ).id,
-              colorVariantName: 'Default',
-              size: 'M',
-              sku: `COMM-SKU-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-              quantity: 10,
-              reservedQuantity: 0,
-            },
-          })
-        ).id,
-        vendorId: vendor.id,
-        productName: 'Commission Test Product',
-        colorVariantName: 'Default',
-        size: 'M',
-        unitPrice: subtotal,
-        quantity: 1,
-        subtotal,
-        commissionAmount,
-        sellerNetAmount: subtotal - commissionAmount,
-      },
-    });
-
-    return { order, vendor };
-  }
 
   it('records the platform cut as its own entry, attributed to the seller', async () => {
     const { order, vendor } = await seedOrderWithLine(1000, 75);
@@ -537,5 +553,25 @@ describe('reversing commission on a refund', () => {
         where: { type: LedgerEntryType.COMMISSION, direction: LedgerDirection.IN },
       }),
     ).toBe(0);
+  });
+
+  it('attributes refund entries to the seller when the refunded order has order lines', async () => {
+    const { orderId, vendorIds } = await seedOrderWithLines([{ subtotal: 1000, commission: 75 }]);
+
+    await postRefundEntries({
+      refundId: 'RF-VENDOR-1',
+      orderId,
+      amount: new Prisma.Decimal(1000),
+      gateway: 'KHALTI',
+    });
+
+    const refundEntries = await prisma.ledgerEntry.findMany({
+      where: { type: LedgerEntryType.REFUND },
+    });
+
+    expect(refundEntries).toHaveLength(1);
+    expect(refundEntries[0]?.vendorId).toBe(vendorIds[0]);
+    expect(refundEntries[0]?.direction).toBe(LedgerDirection.OUT);
+    expect(refundEntries[0]?.amount.toNumber()).toBe(1000);
   });
 });

@@ -37,8 +37,6 @@ describe('Private Customer Endpoints Mandatory No-Store Contract', () => {
     authToken = signJwtToken({
       userId: user.id,
       sessionId: session.id,
-      role: user.role,
-      tokenType: 'ACCESS',
     });
   });
 

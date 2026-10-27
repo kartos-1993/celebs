@@ -216,18 +216,12 @@ export class MediaController {
       throw new BadRequestException('key or url query parameter is required');
     }
 
-    const isKycPath =
-      targetKey.includes('/kyc/') ||
-      targetKey.startsWith('kyc/') ||
-      targetKey.includes('celebs/kyc');
-
     const asset = await mediaRepository.findAssetByKey(targetKey);
-
-    if (isKycPath && !asset) {
+    if (!asset) {
       throw new NotFoundException('Asset not found');
     }
 
-    const isSensitive = Boolean(asset?.isPrivate || asset?.scope === 'KYC' || isKycPath);
+    const isSensitive = Boolean(asset.isPrivate || asset.scope === 'KYC');
 
     if (isSensitive) {
       const actor = req.actor;
@@ -237,7 +231,7 @@ export class MediaController {
         actor?.role === 'SUPERADMIN' ||
         actor?.role === 'ADMIN' ||
         actor?.permissions?.includes(Permission.VENDOR_MANAGE) ||
-        actor?.permissions?.includes(Permission.STAFF_KYC_VERIFY);
+        actor?.permissions?.includes(Permission.STAFF_MANAGE);
 
       const isOwner =
         actor?.role === 'VENDOR' &&
@@ -260,7 +254,7 @@ export class MediaController {
       res.setHeader('Content-Length', contentLength);
     }
     if (stream) {
-      (stream as NodeJS.ReadableStream).pipe(res);
+      stream.pipe(res);
     } else {
       throw new NotFoundException('Media object stream not found');
     }

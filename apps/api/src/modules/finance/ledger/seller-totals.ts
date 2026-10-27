@@ -64,7 +64,11 @@ export function computeSellerTotals(rows: readonly GroupedLedgerRow[]): SellerTo
       .reduce((total, row) => total.plus(row._sum?.amount ?? ZERO_MONEY), ZERO_MONEY);
 
   const grossSales = sumOf(SELLER_REVENUE_TYPES, LedgerDirection.IN);
-  const commission = sumOf(SELLER_COMMISSION_TYPES, LedgerDirection.OUT);
+  const chargedCommission = sumOf(SELLER_COMMISSION_TYPES, LedgerDirection.OUT);
+  const reversedCommission = sumOf(SELLER_COMMISSION_TYPES, LedgerDirection.IN);
+  const netCommission = chargedCommission.minus(reversedCommission);
+  const commission = netCommission.greaterThanOrEqualTo(ZERO_MONEY) ? netCommission : ZERO_MONEY;
+
   const refunds = sumOf(SELLER_REFUND_TYPES, LedgerDirection.OUT);
   const deliveryCosts = sumOf(SELLER_DELIVERY_COST_TYPES, LedgerDirection.OUT);
 

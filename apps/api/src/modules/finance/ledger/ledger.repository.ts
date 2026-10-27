@@ -99,6 +99,27 @@ export class LedgerRepository {
 
     return result._sum.amount ?? new Prisma.Decimal(0);
   }
+
+  /** Read order details needed for ledger posting without exposing Prisma to services. */
+  async findOrderForPosting(orderId: string) {
+    return prisma.order.findUnique({
+      where: { id: orderId },
+      select: { id: true, subtotal: true, shippingFee: true, absorbedShippingCost: true },
+    });
+  }
+
+  /** Read order lines needed for line-level revenue and commission posting. */
+  async findOrderItemsForPosting(orderId: string) {
+    return prisma.orderItem.findMany({
+      where: { orderId },
+      select: {
+        id: true,
+        vendorId: true,
+        subtotal: true,
+        commissionAmount: true,
+      },
+    });
+  }
 }
 
 export const ledgerRepository = new LedgerRepository();

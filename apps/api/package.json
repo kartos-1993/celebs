@@ -28,6 +28,7 @@
     "check:counts": "dotenv -e .env.development -- node -r tsconfig-paths/register -r @swc-node/register src/scripts/maintenance/check-db-counts.ts",
     "verify:catalog": "dotenv -e .env.development -- node -r tsconfig-paths/register -r @swc-node/register src/scripts/maintenance/verify-category-attributes.ts",
     "backfill:address-zones": "dotenv -e .env.development -- node -r tsconfig-paths/register -r @swc-node/register src/scripts/maintenance/backfill-address-zones.ts",
+    "backfill:ledger-vendor": "dotenv -e .env.development -- node -r tsconfig-paths/register -r @swc-node/register src/scripts/maintenance/backfill-ledger-vendor-attribution.ts",
     "dump:pathao-locations": "dotenv -e .env.development -- node -r tsconfig-paths/register -r @swc-node/register src/scripts/maintenance/dump-pathao-locations.ts",
     "sync:pathao-locations": "dotenv -e .env.development -- node -r tsconfig-paths/register -r @swc-node/register src/scripts/maintenance/sync-pathao-locations.ts",
     "sync:pathao-locations:staging": "dotenv -e .env.staging -- node -r tsconfig-paths/register -r @swc-node/register src/scripts/maintenance/sync-pathao-locations.ts",

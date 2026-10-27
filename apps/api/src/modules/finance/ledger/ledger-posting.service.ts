@@ -6,7 +6,6 @@ import { isAboveZero } from './decimal';
 import { LedgerService, ledgerService } from './ledger.service';
 
 import { Prisma } from '@/config/db.prisma';
-import prisma from '@/config/db.prisma';
 
 /**
  * Turns the things that happen to an order into ledger entries.
@@ -32,6 +31,10 @@ export interface PostingOrder {
 /**
  * Records what an order was worth the moment it was placed.
  *
+ * Attributes ORDER_REVENUE per order line to the respective vendor, so each
+ * seller's gross sales are accurately reflected rather than lost in an unassigned
+ * basket.
+ *
  * Only three things are decided here and nowhere else: what the goods sold for,
  * what the customer was charged for delivery, and what delivery cost us anyway
  * when a threshold was met. Each is recorded only when it is a real movement -
@@ -47,28 +50,39 @@ export async function postOrderPlacementEntries(
   input: { orderId: string },
   ledger: LedgerService = ledgerService,
 ): Promise<void> {
-  const order = await prisma.order.findUnique({
-    where: { id: input.orderId },
-    select: { id: true, subtotal: true, shippingFee: true, absorbedShippingCost: true },
-  });
-
+  const order = await ledger.findOrderForPosting(input.orderId);
   if (!order) return;
 
-  const subtotal = order.subtotal;
-  const shippingFee = order.shippingFee;
-  const absorbed = order.absorbedShippingCost ?? new Prisma.Decimal(0);
+  const lines = await ledger.findOrderItemsForPosting(input.orderId);
 
-  if (isAboveZero(subtotal)) {
+  if (lines.length > 0) {
+    for (const line of lines) {
+      if (!isAboveZero(line.subtotal)) continue;
+      await ledger.post({
+        type: LedgerEntryType.ORDER_REVENUE,
+        direction: LedgerDirection.IN,
+        amount: line.subtotal,
+        vendorId: line.vendorId ?? undefined,
+        sourceType: 'ORDER_ITEM',
+        sourceId: line.id,
+        orderId: order.id,
+        memo: 'Goods sold',
+      });
+    }
+  } else if (isAboveZero(order.subtotal)) {
     await ledger.post({
       type: LedgerEntryType.ORDER_REVENUE,
       direction: LedgerDirection.IN,
-      amount: subtotal,
+      amount: order.subtotal,
       sourceType: 'ORDER',
       sourceId: order.id,
       orderId: order.id,
       memo: 'Goods sold',
     });
   }
+
+  const shippingFee = order.shippingFee;
+  const absorbed = order.absorbedShippingCost ?? new Prisma.Decimal(0);
 
   if (isAboveZero(shippingFee)) {
     await ledger.post({
@@ -96,13 +110,6 @@ export async function postOrderPlacementEntries(
 }
 
 /**
- * Records what a courier charged to carry one parcel.
- *
- * Keyed on the consignment rather than the order, because a parcel can be
- * dispatched, returned and dispatched again, and each of those is a separate fee
- * against the same order.
- */
-/**
  * Records the platform's cut, one entry per seller.
  *
  * Per order line rather than per order, because a basket can hold items from
@@ -126,10 +133,7 @@ export async function postOrderCommissionEntries(
   input: { orderId: string },
   ledger: LedgerService = ledgerService,
 ): Promise<void> {
-  const lines = await prisma.orderItem.findMany({
-    where: { orderId: input.orderId },
-    select: { id: true, vendorId: true, commissionAmount: true },
-  });
+  const lines = await ledger.findOrderItemsForPosting(input.orderId);
 
   for (const line of lines) {
     if (!isAboveZero(line.commissionAmount)) continue;
@@ -215,21 +219,55 @@ export async function postRefundEntries(
 ): Promise<void> {
   if (!isAboveZero(input.amount)) return;
 
-  await ledger.post({
-    type: LedgerEntryType.REFUND,
-    direction: LedgerDirection.OUT,
-    amount: input.amount,
-    sourceType: 'REFUND',
-    sourceId: input.refundId,
-    orderId: input.orderId,
-    memo: `Refunded to customer via ${input.gateway}`,
-  });
+  const lines = await ledger.findOrderItemsForPosting(input.orderId);
 
-  await postCommissionReversalEntries({
-    refundId: input.refundId,
-    orderId: input.orderId,
-    amount: input.amount,
-  });
+  if (lines.length > 0) {
+    const totalSubtotal = lines.reduce((sum, l) => sum.plus(l.subtotal), new Prisma.Decimal(0));
+
+    const isFullRefund = input.amount.greaterThanOrEqualTo(totalSubtotal);
+
+    for (const line of lines) {
+      if (!isAboveZero(line.subtotal)) continue;
+      const share = isFullRefund
+        ? line.subtotal
+        : line.subtotal
+            .mul(input.amount)
+            .div(totalSubtotal)
+            .toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP);
+
+      if (!isAboveZero(share)) continue;
+
+      await ledger.post({
+        type: LedgerEntryType.REFUND,
+        direction: LedgerDirection.OUT,
+        amount: share,
+        vendorId: line.vendorId,
+        sourceType: 'REFUND',
+        sourceId: `${input.refundId}:${line.id}`,
+        orderId: input.orderId,
+        memo: `Refunded to customer via ${input.gateway}`,
+      });
+    }
+  } else {
+    await ledger.post({
+      type: LedgerEntryType.REFUND,
+      direction: LedgerDirection.OUT,
+      amount: input.amount,
+      sourceType: 'REFUND',
+      sourceId: input.refundId,
+      orderId: input.orderId,
+      memo: `Refunded to customer via ${input.gateway}`,
+    });
+  }
+
+  await postCommissionReversalEntries(
+    {
+      refundId: input.refundId,
+      orderId: input.orderId,
+      amount: input.amount,
+    },
+    ledger,
+  );
 }
 
 /**
@@ -253,10 +291,7 @@ export async function postCommissionReversalEntries(
 ): Promise<void> {
   if (!isAboveZero(input.amount)) return;
 
-  const lines = await prisma.orderItem.findMany({
-    where: { orderId: input.orderId },
-    select: { id: true, vendorId: true, subtotal: true, commissionAmount: true },
-  });
+  const lines = await ledger.findOrderItemsForPosting(input.orderId);
 
   const reversals = commissionReversals(
     lines.map((l) => ({

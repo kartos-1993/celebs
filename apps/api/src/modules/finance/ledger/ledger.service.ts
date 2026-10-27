@@ -100,6 +100,16 @@ export class LedgerService {
   async courierFeesBetween(courier: string, from: Date, to: Date): Promise<Prisma.Decimal> {
     return this.repo.courierFeesBetween(courier, from, to);
   }
+
+  /** Order lookup for posting. */
+  async findOrderForPosting(orderId: string) {
+    return this.repo.findOrderForPosting(orderId);
+  }
+
+  /** Order line items lookup for posting. */
+  async findOrderItemsForPosting(orderId: string) {
+    return this.repo.findOrderItemsForPosting(orderId);
+  }
 }
 
 export const ledgerService = new LedgerService();

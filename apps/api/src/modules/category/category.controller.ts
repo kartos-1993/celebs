@@ -19,32 +19,32 @@ import { sendCreated, sendSuccess } from '@/common/utils/response.util';
 export class CategoryController {
   constructor(private categoryService: CategoryService) {}
 
-  getAllCategories = async (req: Request, res: Response, next: NextFunction) => {
+  getAllCategories = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { page, limit } = categoryPaginationQuerySchema.parse(req.query);
 
       const result = await this.categoryService.getAllCategories(page, limit);
 
-      return sendSuccess(res, result, 'Categories retrieved successfully');
+      sendSuccess(res, result, 'Categories retrieved successfully');
     } catch (error) {
       next(error);
     }
   };
 
-  createCategory = async (req: Request, res: Response, next: NextFunction) => {
+  createCategory = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       logger.debug({ body: req.body, user: req.user }, 'Create category request received');
       const validatedData = categoryInputSchema.parse(req.body);
 
       const category = await this.categoryService.createCategory(validatedData);
 
-      return sendCreated(res, category, 'Category created successfully');
+      sendCreated(res, category, 'Category created successfully');
     } catch (error) {
       next(error);
     }
   };
 
-  getCategoryById = async (req: Request, res: Response, next: NextFunction) => {
+  getCategoryById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { id } = categoryIdParamSchema.parse(req.params);
       const category = await this.categoryService.getCategoryById(id);
@@ -57,13 +57,13 @@ export class CategoryController {
         );
       }
 
-      return sendSuccess(res, category, 'Category retrieved successfully');
+      sendSuccess(res, category, 'Category retrieved successfully');
     } catch (error) {
       next(error);
     }
   };
 
-  getCategoryBySlug = async (req: Request, res: Response, next: NextFunction) => {
+  getCategoryBySlug = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { slug } = categorySlugParamSchema.parse(req.params);
       const category = await this.categoryService.getCategoryBySlug(slug);
@@ -76,114 +76,122 @@ export class CategoryController {
         );
       }
 
-      return sendSuccess(res, category, 'Category retrieved successfully');
+      sendSuccess(res, category, 'Category retrieved successfully');
     } catch (error) {
       next(error);
     }
   };
 
-  getCategoryTree = async (_req: Request, res: Response, next: NextFunction) => {
+  getCategoryTree = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const tree = await this.categoryService.getCategoryTree();
-      return sendSuccess(res, tree, 'Category tree retrieved successfully');
+      sendSuccess(res, tree, 'Category tree retrieved successfully');
     } catch (error) {
       next(error);
     }
   };
 
-  getCategoryTreeWithAttributes = async (_req: Request, res: Response, next: NextFunction) => {
+  getCategoryTreeWithAttributes = async (
+    _req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> => {
     try {
       const tree = await this.categoryService.getCategoryTreeWithAttributes();
-      return sendSuccess(res, tree, 'Category tree with attributes retrieved successfully');
+      sendSuccess(res, tree, 'Category tree with attributes retrieved successfully');
     } catch (error) {
       next(error);
     }
   };
 
-  deleteCategory = async (req: Request, res: Response, next: NextFunction) => {
+  deleteCategory = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { id } = categoryIdParamSchema.parse(req.params);
       await this.categoryService.deleteCategoryWithCascade(id);
-      return sendSuccess(res, null, 'Category deleted successfully');
+      sendSuccess(res, null, 'Category deleted successfully');
     } catch (error) {
       next(error);
     }
   };
 
-  updateCategory = async (req: Request, res: Response, next: NextFunction) => {
+  updateCategory = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { id } = categoryIdParamSchema.parse(req.params);
       const validatedData = updateCategorySchema.parse(req.body);
 
       const updatedCategory = await this.categoryService.updateCategory(id, validatedData);
 
-      return sendSuccess(res, updatedCategory, 'Category updated successfully');
+      sendSuccess(res, updatedCategory, 'Category updated successfully');
     } catch (error) {
       next(error);
     }
   };
 
-  getStorefrontSchema = async (req: Request, res: Response, next: NextFunction) => {
+  getStorefrontSchema = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { slug } = categorySlugParamSchema.parse(req.params);
       const schema = await this.categoryService.getStorefrontSchema(slug);
-      return sendSuccess(res, schema, 'Storefront schema retrieved successfully');
+      sendSuccess(res, schema, 'Storefront schema retrieved successfully');
     } catch (error) {
       next(error);
     }
   };
 
-  updateCategoryAttributes = async (req: Request, res: Response, next: NextFunction) => {
+  updateCategoryAttributes = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> => {
     try {
       const { id } = categoryIdParamSchema.parse(req.params);
       const { attributes } = updateCategoryAttributesSchema.parse(req.body);
       const updated = await this.categoryService.updateCategoryAttributes(id, attributes);
-      return sendSuccess(res, updated, 'Category attributes updated successfully');
+      sendSuccess(res, updated, 'Category attributes updated successfully');
     } catch (error) {
       next(error);
     }
   };
 
-  searchCategories = async (req: Request, res: Response, next: NextFunction) => {
+  searchCategories = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { q, limit } = categorySearchQuerySchema.parse(req.query);
       const results = await this.categoryService.searchCategories(q, limit);
-      return sendSuccess(res, results, 'Category search results retrieved successfully');
+      sendSuccess(res, results, 'Category search results retrieved successfully');
     } catch (error) {
       next(error);
     }
   };
 
-  getCategoryFilters = async (req: Request, res: Response, next: NextFunction) => {
+  getCategoryFilters = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { id } = categoryIdParamSchema.parse(req.params);
       const filters = await this.categoryService.getCategoryFilters(id);
-      return sendSuccess(res, filters, 'Category filters retrieved successfully');
+      sendSuccess(res, filters, 'Category filters retrieved successfully');
     } catch (error) {
       next(error);
     }
   };
 
-  getRecentCategories = async (req: Request, res: Response, next: NextFunction) => {
+  getRecentCategories = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const userId = req.actor?.userId || req.user?.id || '';
       const vendorId =
         req.store?.id || req.user?.vendorProfile?.id || req.user?.vendorId || undefined;
       const recent = await this.categoryService.getRecentCategories(userId, vendorId);
-      return sendSuccess(res, recent, 'Recent categories retrieved successfully');
+      sendSuccess(res, recent, 'Recent categories retrieved successfully');
     } catch (error) {
       next(error);
     }
   };
 
-  recordRecentCategory = async (req: Request, res: Response, next: NextFunction) => {
+  recordRecentCategory = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const userId = req.actor?.userId || req.user?.id || '';
       const vendorId =
         req.store?.id || req.user?.vendorProfile?.id || req.user?.vendorId || undefined;
       const { categoryId } = recordRecentCategorySchema.parse(req.body);
       const recent = await this.categoryService.recordRecentCategory(userId, categoryId, vendorId);
-      return sendSuccess(res, recent, 'Recent category updated');
+      sendSuccess(res, recent, 'Recent category updated');
     } catch (error) {
       next(error);
     }
