@@ -1,20 +1,43 @@
 import { describe, expect, it } from 'vitest';
 
 import { Permission } from '@celebs/rbac';
+import type { UserData, VendorProfileData } from '@celebs/shared-types';
 
 import { deriveAuthPersona } from '../auth-persona';
 
-import type { UserData } from '@/types';
+function createMockVendorProfile(overrides: Partial<VendorProfileData>): VendorProfileData {
+  return {
+    id: 'store-1',
+    shopName: 'Shop',
+    status: 'APPROVED',
+    onboardingStep: 4,
+    holidayMode: false,
+    phoneNumber: '9800000000',
+    ...overrides,
+  };
+}
+
+function createMockUser(overrides: Partial<UserData>): UserData {
+  return {
+    id: 'user-1',
+    name: 'Test User',
+    email: 'test@example.com',
+    role: 'CUSTOMER',
+    isEmailVerified: true,
+    permissions: [],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    ...overrides,
+  };
+}
 
 describe('deriveAuthPersona', () => {
   it('evaluates platform superadmin with mode admin and all permissions unlocked', () => {
-    const user: UserData = {
+    const user = createMockUser({
       id: 'super-1',
       email: 'super@celebs.com',
       role: 'SUPERADMIN',
-      isEmailVerified: true,
-      permissions: [],
-    };
+    });
 
     const persona = deriveAuthPersona(user);
 
@@ -29,13 +52,11 @@ describe('deriveAuthPersona', () => {
   });
 
   it('evaluates platform admin with mode admin and platform flag set', () => {
-    const user: UserData = {
+    const user = createMockUser({
       id: 'admin-1',
       email: 'admin@celebs.com',
       role: 'ADMIN',
-      isEmailVerified: true,
-      permissions: [],
-    };
+    });
 
     const persona = deriveAuthPersona(user);
 
@@ -50,14 +71,12 @@ describe('deriveAuthPersona', () => {
   });
 
   it('guarantees platform admin is never classified as seller even if vendorId is present', () => {
-    const user: UserData = {
+    const user = createMockUser({
       id: 'admin-2',
       email: 'admin@celebs.com',
       role: 'ADMIN',
-      isEmailVerified: true,
       vendorId: 'accidental-vendor-id',
-      permissions: [],
-    };
+    });
 
     const persona = deriveAuthPersona(user);
 
@@ -67,17 +86,15 @@ describe('deriveAuthPersona', () => {
   });
 
   it('evaluates store vendor with mode vendor and store id preserved', () => {
-    const user: UserData = {
+    const user = createMockUser({
       id: 'vendor-user-1',
       email: 'cachee@celebs.com',
       role: 'VENDOR',
-      isEmailVerified: true,
-      vendorProfile: {
+      vendorProfile: createMockVendorProfile({
         id: 'store-cachee-123',
         shopName: 'Cachee Official',
-      },
-      permissions: [],
-    };
+      }),
+    });
 
     const persona = deriveAuthPersona(user);
 
@@ -94,22 +111,21 @@ describe('deriveAuthPersona', () => {
   });
 
   it('evaluates store inventory staff with product permissions and no finance access', () => {
-    const user: UserData = {
+    const user = createMockUser({
       id: 'staff-inv-1',
       email: 'inventory@cachee.com',
       role: 'STAFF',
-      isEmailVerified: true,
-      vendorProfile: {
+      vendorProfile: createMockVendorProfile({
         id: 'store-cachee-123',
         shopName: 'Cachee Official',
-      },
+      }),
       permissions: [
         Permission.PRODUCT_VIEW,
         Permission.PRODUCT_CREATE,
         Permission.PRODUCT_EDIT,
         Permission.MEDIA_VIEW,
       ],
-    };
+    });
 
     const persona = deriveAuthPersona(user);
 
@@ -124,17 +140,16 @@ describe('deriveAuthPersona', () => {
   });
 
   it('evaluates store accountant staff with finance permissions and no product editing', () => {
-    const user: UserData = {
+    const user = createMockUser({
       id: 'staff-acc-1',
       email: 'finance@cachee.com',
       role: 'STAFF',
-      isEmailVerified: true,
-      vendorProfile: {
+      vendorProfile: createMockVendorProfile({
         id: 'store-cachee-123',
         shopName: 'Cachee Official',
-      },
+      }),
       permissions: [Permission.FINANCE_VIEW, Permission.ORDER_VIEW],
-    };
+    });
 
     const persona = deriveAuthPersona(user);
 

@@ -29,3 +29,17 @@ export function useSettlementBatches(filters: SettlementFilters & ListParams) {
     queryFn: () => FinanceApi.getSettlementBatches(filters),
   });
 }
+
+export function usePlatformOverview(filters?: { from?: string; to?: string }) {
+  return useQuery({
+    queryKey: FINANCE_QUERY_KEYS.platformOverview(filters),
+    queryFn: () => FinanceApi.getPlatformOverview(filters),
+  });
+}
+
+export function usePlatformSellers(params?: ListParams & { search?: string }) {
+  return useQuery({
+    queryKey: FINANCE_QUERY_KEYS.platformSellers(params),
+    queryFn: () => FinanceApi.listPlatformSellers(params),
+  });
+}

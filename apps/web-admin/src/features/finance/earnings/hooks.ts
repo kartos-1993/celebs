@@ -30,3 +30,19 @@ export function useEarningsList(filters: { page: number; limit: number }) {
     },
   });
 }
+
+export function useOrderEarnings(filters: {
+  page: number;
+  limit: number;
+  from?: string;
+  to?: string;
+}) {
+  return useQuery({
+    queryKey: EARNINGS_QUERY_KEYS.orders(filters),
+    queryFn: async () => {
+      const { data } = await EarningsApi.listOrders(filters);
+
+      return data;
+    },
+  });
+}

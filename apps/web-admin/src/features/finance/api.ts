@@ -80,10 +80,36 @@ export interface SettlementUpdate {
   status?: Extract<SettlementStatus, 'RECONCILED' | 'PAID'>;
 }
 
+export interface PlatformOverview {
+  totalGmv: string;
+  totalPlatformCommission: string;
+  totalVatCollected: string;
+  totalRefunds: string;
+  totalSettledPayouts: string;
+  pendingSettlementBalance: string;
+  activeSellersCount: number;
+  currency: string;
+}
+
+export interface PlatformSellerItem {
+  vendorId: string;
+  shopName: string;
+  status: string;
+  payoutMethod: 'BANK_ACCOUNT' | 'ESEWA' | 'KHALTI' | 'UNCONFIGURED';
+  payoutDetails: unknown;
+  grossSales: string;
+  commission: string;
+  refunds: string;
+  netPayable: string;
+  currency: string;
+}
+
 export type LedgerListResponse = IPaginatedApiResponse<LedgerEntry>;
 export type SettlementListResponse = IPaginatedApiResponse<SettlementBatch>;
 export type OpenBatchResponse = IApiResponse<SettlementBatch>;
 export type UpdateBatchResponse = IApiResponse<SettlementBatch>;
+export type PlatformOverviewResponse = IApiResponse<PlatformOverview>;
+export type PlatformSellersResponse = IPaginatedApiResponse<PlatformSellerItem>;
 
 export const FINANCE_QUERY_KEYS = {
   all: ['finance'] as const,
@@ -92,6 +118,10 @@ export const FINANCE_QUERY_KEYS = {
     [...FINANCE_QUERY_KEYS.lists(), 'ledger', filters ?? {}] as const,
   settlements: (filters?: SettlementFilters & ListParams) =>
     [...FINANCE_QUERY_KEYS.lists(), 'settlements', filters ?? {}] as const,
+  platformOverview: (filters?: { from?: string; to?: string }) =>
+    [...FINANCE_QUERY_KEYS.all, 'platform', 'overview', filters ?? {}] as const,
+  platformSellers: (params?: ListParams & { search?: string }) =>
+    [...FINANCE_QUERY_KEYS.all, 'platform', 'sellers', params ?? {}] as const,
 };
 
 export const FinanceApi = {
@@ -145,6 +175,27 @@ export const FinanceApi = {
       `/finance/settlements/${id}`,
       payload,
     );
+
+    return response.data;
+  },
+
+  async getPlatformOverview(params?: {
+    from?: string;
+    to?: string;
+  }): Promise<PlatformOverviewResponse> {
+    const response = await axiosClient.get<PlatformOverviewResponse>('/finance/platform/overview', {
+      params,
+    });
+
+    return response.data;
+  },
+
+  async listPlatformSellers(
+    params?: ListParams & { search?: string },
+  ): Promise<PlatformSellersResponse> {
+    const response = await axiosClient.get<PlatformSellersResponse>('/finance/platform/sellers', {
+      params,
+    });
 
     return response.data;
   },

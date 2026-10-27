@@ -33,14 +33,33 @@ export interface EarningsEntry {
   occurredAt: string;
 }
 
+export interface OrderEarningsItem {
+  orderId: string;
+  orderNumber: string;
+  orderDate: string;
+  orderStatus: string;
+  itemCount: number;
+  grossSales: string;
+  commission: string;
+  vatOnCommission: string;
+  netEarnings: string;
+  refunds: string;
+  refundStatus: 'NONE' | 'PARTIAL' | 'FULL';
+  creditNoteAvailable: boolean;
+  currency: string;
+}
+
 export type EarningsSummaryResponse = IApiResponse<{ summary: EarningsSummary }>;
 export type EarningsListResponse = IPaginatedApiResponse<EarningsEntry>;
+export type OrderEarningsListResponse = IPaginatedApiResponse<OrderEarningsItem>;
 
 export const EARNINGS_QUERY_KEYS = {
   all: ['earnings'] as const,
   summary: () => [...EARNINGS_QUERY_KEYS.all, 'summary'] as const,
   list: (filters?: { page?: number; limit?: number }) =>
     [...EARNINGS_QUERY_KEYS.all, 'list', filters ?? {}] as const,
+  orders: (filters?: { page?: number; limit?: number; from?: string; to?: string }) =>
+    [...EARNINGS_QUERY_KEYS.all, 'orders', filters ?? {}] as const,
 };
 
 export const EarningsApi = {
@@ -56,6 +75,24 @@ export const EarningsApi = {
   }: { page?: number; limit?: number } = {}): Promise<EarningsListResponse> {
     const response = await axiosClient.get<EarningsListResponse>('/finance/earnings', {
       params: { page, limit },
+    });
+
+    return response.data;
+  },
+
+  async listOrders({
+    page = 1,
+    limit = 25,
+    from,
+    to,
+  }: {
+    page?: number;
+    limit?: number;
+    from?: string;
+    to?: string;
+  } = {}): Promise<OrderEarningsListResponse> {
+    const response = await axiosClient.get<OrderEarningsListResponse>('/finance/earnings/orders', {
+      params: { page, limit, from, to },
     });
 
     return response.data;

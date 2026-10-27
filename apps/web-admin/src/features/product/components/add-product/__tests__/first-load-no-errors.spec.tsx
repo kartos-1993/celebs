@@ -195,8 +195,6 @@ function Journey() {
       <AddProductFormBody
         productId={undefined}
         isEditMode={false}
-        role="ADMIN"
-        userPermissions={['PRODUCT_PUBLISH']}
         form={form}
         schemaFields={schemaFields}
         isSchemaLoading={false}
