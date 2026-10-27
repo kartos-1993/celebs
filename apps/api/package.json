@@ -25,6 +25,7 @@
     "seed:vendors": "dotenv -e .env.development -- node -r tsconfig-paths/register -r @swc-node/register src/db/seed/seed-test-vendors.ts",
     "r2:orphans": "dotenv -e .env.development -- node -r tsconfig-paths/register -r @swc-node/register src/scripts/maintenance/r2-orphan-reaper.ts",
     "clean:catalog": "dotenv -e .env.development -- node -r tsconfig-paths/register -r @swc-node/register src/scripts/maintenance/clear-products-and-orders.ts",
+    "clean:orders": "dotenv -e .env.development -- node -r tsconfig-paths/register -r @swc-node/register src/scripts/maintenance/clear-orders-and-finance.ts",
     "check:counts": "dotenv -e .env.development -- node -r tsconfig-paths/register -r @swc-node/register src/scripts/maintenance/check-db-counts.ts",
     "verify:catalog": "dotenv -e .env.development -- node -r tsconfig-paths/register -r @swc-node/register src/scripts/maintenance/verify-category-attributes.ts",
     "backfill:address-zones": "dotenv -e .env.development -- node -r tsconfig-paths/register -r @swc-node/register src/scripts/maintenance/backfill-address-zones.ts",
