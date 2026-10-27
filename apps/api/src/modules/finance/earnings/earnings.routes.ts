@@ -34,6 +34,12 @@ router.get(
   asyncHandler(earningsController.summary),
 );
 
+router.get(
+  '/orders',
+  requirePermissions(Permission.FINANCE_VIEW),
+  asyncHandler(earningsController.orders),
+);
+
 router.get('/', requirePermissions(Permission.FINANCE_VIEW), asyncHandler(earningsController.list));
 
 export default router;

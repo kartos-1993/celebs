@@ -1,5 +1,5 @@
-
 import { computeSellerTotals, type GroupedLedgerRow } from '../ledger/seller-totals';
+import { calculateNepalCommissionTax } from '../tax/tax-calculator';
 
 import prisma, { Prisma } from '@/config/db.prisma';
 
@@ -30,6 +30,22 @@ export interface EarningsSummary {
   refunds: Prisma.Decimal;
   /** Gross less commission and refunds. Derived, never multiplied by a rate. */
   netEarnings: Prisma.Decimal;
+  currency: string;
+}
+
+export interface OrderEarningsItem {
+  orderId: string;
+  orderNumber: string;
+  orderDate: Date;
+  orderStatus: string;
+  itemCount: number;
+  grossSales: Prisma.Decimal;
+  commission: Prisma.Decimal;
+  vatOnCommission: Prisma.Decimal;
+  netEarnings: Prisma.Decimal;
+  refunds: Prisma.Decimal;
+  refundStatus: 'NONE' | 'PARTIAL' | 'FULL';
+  creditNoteAvailable: boolean;
   currency: string;
 }
 
@@ -76,6 +92,132 @@ export class EarningsRepository {
       }),
       prisma.ledgerEntry.count({ where }),
     ]);
+
+    return { items, total };
+  }
+
+  /**
+   * List order-grouped earnings for a seller with line item isolation,
+   * Nepal 13% VAT calculation, and refund accounting.
+   */
+  async listOrderEarnings(
+    scope: EarningsScope & { page: number; limit: number },
+  ): Promise<{ items: OrderEarningsItem[]; total: number }> {
+    const where: Prisma.OrderWhereInput = {
+      items: {
+        some: { vendorId: scope.vendorId },
+      },
+      ...(scope.from || scope.to
+        ? {
+            createdAt: {
+              ...(scope.from ? { gte: scope.from } : {}),
+              ...(scope.to ? { lt: scope.to } : {}),
+            },
+          }
+        : {}),
+    };
+
+    const [orders, total] = await Promise.all([
+      prisma.order.findMany({
+        where,
+        select: {
+          id: true,
+          orderNumber: true,
+          status: true,
+          paymentStatus: true,
+          createdAt: true,
+          items: {
+            where: { vendorId: scope.vendorId },
+            select: {
+              id: true,
+              vendorId: true,
+              subtotal: true,
+              commissionAmount: true,
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip: (scope.page - 1) * scope.limit,
+        take: scope.limit,
+      }),
+      prisma.order.count({ where }),
+    ]);
+
+    const orderIds = orders.map((o) => o.id);
+    const ledgerEntries =
+      orderIds.length > 0
+        ? await prisma.ledgerEntry.findMany({
+            where: {
+              orderId: { in: orderIds },
+              vendorId: scope.vendorId,
+              type: { in: ['REFUND', 'COMMISSION'] },
+            },
+          })
+        : [];
+
+    const ledgerByOrder = new Map<string, typeof ledgerEntries>();
+    for (const entry of ledgerEntries) {
+      if (!entry.orderId) continue;
+      const list = ledgerByOrder.get(entry.orderId) ?? [];
+      list.push(entry);
+      ledgerByOrder.set(entry.orderId, list);
+    }
+
+    const items: OrderEarningsItem[] = orders.map((order) => {
+      let grossSales = new Prisma.Decimal(0);
+      let commission = new Prisma.Decimal(0);
+
+      // Multi-vendor safety: only aggregate items belonging to this vendor
+      for (const item of order.items) {
+        if (item.vendorId === scope.vendorId) {
+          grossSales = grossSales.plus(item.subtotal);
+          commission = commission.plus(item.commissionAmount);
+        }
+      }
+
+      const { vatAmount: vatOnCommission } = calculateNepalCommissionTax(commission);
+
+      const entries = ledgerByOrder.get(order.id) ?? [];
+      let refunds = new Prisma.Decimal(0);
+      for (const entry of entries) {
+        if (entry.type === 'REFUND') {
+          if (entry.direction === 'OUT') {
+            refunds = refunds.plus(entry.amount);
+          } else if (entry.direction === 'IN') {
+            refunds = refunds.minus(entry.amount);
+          }
+        }
+      }
+
+      // If full order was refunded and no ledger rows yet (fallback guard)
+      if ((order.status === 'RETURNED' || order.paymentStatus === 'REFUNDED') && refunds.isZero()) {
+        refunds = grossSales;
+      }
+
+      const refundStatus: 'NONE' | 'PARTIAL' | 'FULL' = refunds.isZero()
+        ? 'NONE'
+        : refunds.gte(grossSales)
+          ? 'FULL'
+          : 'PARTIAL';
+
+      const netEarnings = grossSales.minus(commission).minus(vatOnCommission).minus(refunds);
+
+      return {
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        orderDate: order.createdAt,
+        orderStatus: order.status,
+        itemCount: order.items.filter((i) => i.vendorId === scope.vendorId).length,
+        grossSales,
+        commission,
+        vatOnCommission,
+        netEarnings,
+        refunds,
+        refundStatus,
+        creditNoteAvailable: !refunds.isZero(),
+        currency: 'NPR',
+      };
+    });
 
     return { items, total };
   }

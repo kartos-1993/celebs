@@ -3,7 +3,11 @@ import { z } from 'zod';
 
 import { asyncHandler } from '@celebs/shared-utils';
 
-import { EarningsRepository, earningsRepository } from './earnings.repository';
+import {
+  EarningsRepository,
+  earningsRepository,
+  type OrderEarningsItem,
+} from './earnings.repository';
 import { resolveVendorForRead } from './earnings-scope';
 
 import { sendPaginated, sendSuccess } from '@/common/utils/response.util';
@@ -30,7 +34,7 @@ const querySchema = z.object({
 export class EarningsController {
   constructor(private readonly repository: EarningsRepository = earningsRepository) {}
 
-  public summary = asyncHandler(async (req: Request, res: Response) => {
+  public summary = asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const query = querySchema.parse(req.query);
     const vendorId = resolveVendorForRead(req);
 
@@ -40,7 +44,7 @@ export class EarningsController {
       to: query.to ? new Date(query.to) : undefined,
     });
 
-    return sendSuccess(res, {
+    sendSuccess(res, {
       summary: {
         grossSales: summary.grossSales.toFixed(2),
         commission: summary.commission.toFixed(2),
@@ -52,7 +56,7 @@ export class EarningsController {
     });
   });
 
-  public list = asyncHandler(async (req: Request, res: Response) => {
+  public list = asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const query = querySchema.parse(req.query);
     const vendorId = resolveVendorForRead(req);
 
@@ -64,11 +68,31 @@ export class EarningsController {
       to: query.to ? new Date(query.to) : undefined,
     });
 
-    return sendPaginated(
+    sendPaginated(
       res,
       items.map(serializeEntry),
       { page: query.page, limit: query.limit, total },
       'Earnings retrieved',
+    );
+  });
+
+  public orders = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const query = querySchema.parse(req.query);
+    const vendorId = resolveVendorForRead(req);
+
+    const { items, total } = await this.repository.listOrderEarnings({
+      vendorId,
+      page: query.page,
+      limit: query.limit,
+      from: query.from ? new Date(query.from) : undefined,
+      to: query.to ? new Date(query.to) : undefined,
+    });
+
+    sendPaginated(
+      res,
+      items.map(serializeOrderEarnings),
+      { page: query.page, limit: query.limit, total },
+      'Order earnings retrieved',
     );
   });
 }
@@ -96,6 +120,24 @@ function serializeEntry(entry: {
     orderId: entry.orderId,
     vendorId: entry.vendorId,
     occurredAt: entry.occurredAt.toISOString(),
+  };
+}
+
+function serializeOrderEarnings(item: OrderEarningsItem) {
+  return {
+    orderId: item.orderId,
+    orderNumber: item.orderNumber,
+    orderDate: item.orderDate.toISOString(),
+    orderStatus: item.orderStatus,
+    itemCount: item.itemCount,
+    grossSales: item.grossSales.toFixed(2),
+    commission: item.commission.toFixed(2),
+    vatOnCommission: item.vatOnCommission.toFixed(2),
+    netEarnings: item.netEarnings.toFixed(2),
+    refunds: item.refunds.toFixed(2),
+    refundStatus: item.refundStatus,
+    creditNoteAvailable: item.creditNoteAvailable,
+    currency: item.currency,
   };
 }
 

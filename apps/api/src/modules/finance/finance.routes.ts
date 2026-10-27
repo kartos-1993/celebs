@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { Permission } from '@celebs/rbac';
 import { asyncHandler } from '@celebs/shared-utils';
 
+import platformFinanceRoutes from './platform/platform-finance.routes';
 import { financeController } from './finance.controller';
 
 import { actorContext } from '@/common/context/actor-context.middleware';
@@ -10,7 +11,7 @@ import { authenticateJWT } from '@/middlewares/auth.middleware';
 import { requirePermissions } from '@/middlewares/rbac.middleware';
 
 /**
- * The courier ledger and settlement batches.
+ * The courier ledger, settlement batches, and platform marketplace overview.
  *
  * Read and write are guarded separately, and deliberately so. The platform
  * permissions are separate from the shop-scoped FINANCE_VIEW that a vendor
@@ -22,6 +23,8 @@ import { requirePermissions } from '@/middlewares/rbac.middleware';
 const router = Router();
 
 router.use(authenticateJWT, asyncHandler(actorContext));
+
+router.use('/platform', platformFinanceRoutes);
 
 router.get(
   '/ledger',
