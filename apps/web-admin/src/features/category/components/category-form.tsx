@@ -32,10 +32,8 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
   onCancel,
   isLoading = false,
 }) => {
-  const { role } = useAuthContext();
-  const isSuperadmin = role === 'SUPERADMIN';
-  const isEditing = !!initialData?.id;
-
+  const { isSuperAdmin } = useAuthContext();
+  const isEditing = Boolean(initialData?.id);
   const storefrontSaveHandlerRef = useRef<(() => Promise<void>) | null>(null);
 
   const handleRegisterStorefrontSave = useCallback((fn: () => Promise<void>) => {
@@ -77,7 +75,7 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
     <Form {...form}>
       <form onSubmit={handleSubmit} className="space-y-4 py-2 pb-4">
         <Tabs defaultValue="basic" className="w-full">
-          <TabsList className={`grid w-full ${isSuperadmin ? 'grid-cols-3' : 'grid-cols-2'} mb-4`}>
+          <TabsList className={`grid w-full ${isSuperAdmin ? 'grid-cols-3' : 'grid-cols-2'} mb-4`}>
             <TabsTrigger value="basic" className="flex items-center gap-2">
               <FolderTree className="h-4 w-4" />
               Basic Info
@@ -86,7 +84,7 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
               <SlidersHorizontal className="h-4 w-4" />
               Attributes & Size Guide ({attributeFields.length})
             </TabsTrigger>
-            {isSuperadmin && (
+            {isSuperAdmin && (
               <TabsTrigger value="storefront" className="flex items-center gap-2">
                 <Store className="h-4 w-4 text-primary" />
                 Storefront Display
@@ -99,7 +97,6 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
               form={form}
               categories={categories}
               initialDataId={initialData?.id}
-              role={role}
               isUploadingImage={isUploadingImage}
               handleImageUpload={handleImageUpload}
             />
@@ -122,7 +119,7 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
             />
           </TabsContent>
 
-          {isSuperadmin && (
+          {isSuperAdmin && (
             <TabsContent value="storefront">
               <CategoryStorefrontTab
                 categoryId={initialData?.id}

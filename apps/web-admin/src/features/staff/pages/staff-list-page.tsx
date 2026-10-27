@@ -232,8 +232,8 @@ function ResendStaffInviteButton({ email }: { email: string }) {
 
 export default function StaffList() {
   const queryClient = useQueryClient();
-  const { role } = useAuthContext();
-  const isAdminOrSuperAdmin = role === 'SUPERADMIN' || role === 'ADMIN';
+  const { isPlatform } = useAuthContext();
+  const isAdminOrSuperAdmin = isPlatform;
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedPreset, setSelectedPreset] = useState('inventory');

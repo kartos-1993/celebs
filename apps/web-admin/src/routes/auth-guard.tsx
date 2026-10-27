@@ -12,7 +12,7 @@ interface AuthGuardProps {
 }
 
 export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
-  const { user, isLoading } = useAuthContext();
+  const { user, isLoading, isVendor } = useAuthContext();
   const location = useLocation();
 
   if (isLoading) {
@@ -44,7 +44,7 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
   // All other statuses (PENDING, UNDER_REVIEW, REJECTED) are redirected to
   // /onboarding where the wizard decides what to render based on status.
   if (
-    user.role === 'VENDOR' &&
+    isVendor &&
     user.vendorProfile &&
     user.vendorProfile.status !== 'APPROVED' &&
     !location.pathname.startsWith(PATHS.VENDORS.ONBOARDING)

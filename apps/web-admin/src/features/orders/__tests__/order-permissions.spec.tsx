@@ -91,74 +91,49 @@ describe('Order RBAC Jurisdiction & Dynamic Action UI', () => {
 
   it('correctly isolates vendor role from financial settlement permissions', () => {
     const evaluateCanSettle = (actor: {
-      isVendor: boolean;
-      isStaff: boolean;
-      hasVendorProfile: boolean;
-      isAdmin: boolean;
-      isSuperAdmin: boolean;
-      hasFinanceManage: boolean;
+      isPlatform: boolean;
+      hasFinancePlatformManage: boolean;
     }) => {
-      const isSeller = actor.isVendor || actor.isStaff || actor.hasVendorProfile;
-      return !isSeller && (actor.isAdmin || actor.isSuperAdmin) && actor.hasFinanceManage;
+      return actor.isPlatform && actor.hasFinancePlatformManage;
     };
 
-    // Vendor with accidental finance grant is still blocked
+    // Vendor / seller with accidental finance grant is still blocked
     expect(
       evaluateCanSettle({
-        isVendor: true,
-        isStaff: false,
-        hasVendorProfile: true,
-        isAdmin: false,
-        isSuperAdmin: false,
-        hasFinanceManage: true,
+        isPlatform: false,
+        hasFinancePlatformManage: true,
       }),
     ).toBe(false);
 
     // Vendor staff is blocked
     expect(
       evaluateCanSettle({
-        isVendor: false,
-        isStaff: true,
-        hasVendorProfile: false,
-        isAdmin: false,
-        isSuperAdmin: false,
-        hasFinanceManage: true,
+        isPlatform: false,
+        hasFinancePlatformManage: true,
       }),
     ).toBe(false);
 
     // Platform admin without finance permission is blocked
     expect(
       evaluateCanSettle({
-        isVendor: false,
-        isStaff: false,
-        hasVendorProfile: false,
-        isAdmin: true,
-        isSuperAdmin: false,
-        hasFinanceManage: false,
+        isPlatform: true,
+        hasFinancePlatformManage: false,
       }),
     ).toBe(false);
 
     // Authorized platform admin is permitted
     expect(
       evaluateCanSettle({
-        isVendor: false,
-        isStaff: false,
-        hasVendorProfile: false,
-        isAdmin: true,
-        isSuperAdmin: false,
-        hasFinanceManage: true,
+        isPlatform: true,
+        hasFinancePlatformManage: true,
       }),
     ).toBe(true);
 
     // SuperAdmin with finance permission is permitted
     expect(
       evaluateCanSettle({
-        isVendor: false,
-        isStaff: false,
-        hasVendorProfile: false,
-        isAdmin: false,
-        isSuperAdmin: true,
-        hasFinanceManage: true,
+        isPlatform: true,
+        hasFinancePlatformManage: true,
       }),
     ).toBe(true);
   });

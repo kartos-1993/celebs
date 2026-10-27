@@ -100,7 +100,7 @@ export type {
   UpdateOrderItemStatusInput,
 };
 
-export type Mode = 'vendor' | 'admin';
+export type { Mode } from '@/context/auth-provider';
 
 export interface StatusTab {
   id: string;

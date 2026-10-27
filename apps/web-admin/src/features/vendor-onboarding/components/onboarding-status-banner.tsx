@@ -8,10 +8,10 @@ import { useAuthContext } from '@/context/auth-provider';
 import { PATHS } from '@/routes/paths';
 
 export const OnboardingStatusBanner: React.FC = () => {
-  const { user } = useAuthContext();
+  const { user, isVendor } = useAuthContext();
   const navigate = useNavigate();
 
-  if (!user || user.role !== 'VENDOR' || !user.vendorProfile) {
+  if (!user || !isVendor || !user.vendorProfile) {
     return null;
   }
 

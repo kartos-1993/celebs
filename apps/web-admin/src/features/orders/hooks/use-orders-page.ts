@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { Permission } from '@celebs/rbac';
 
-import type { LogisticsProvider, Mode, OrderItemStatus } from '../types';
+import type { LogisticsProvider, OrderItemStatus } from '../types';
 
 import { useFulfillmentDialog } from './use-fulfillment-dialog';
 import {
@@ -16,7 +16,6 @@ import { useOrdersList } from './use-orders-list';
 import { useListQueryState } from '@/common/hooks/use-list-query-state';
 import { useAuthContext } from '@/context/auth-provider';
 import { useDebounce } from '@/hooks/use-debounce';
-import { usePermission } from '@/hooks/use-permission';
 import { useToast } from '@/hooks/use-toast';
 
 const ORDER_TABS = [
@@ -32,11 +31,8 @@ const ORDER_TABS = [
 ] as const;
 
 export function useOrdersPage() {
-  const { user, isVendor, isStaff, isAdmin, isSuperAdmin } = useAuthContext();
+  const { user, mode, isPlatform, hasPermission } = useAuthContext();
   const { toast } = useToast();
-
-  const isSeller = isVendor || isStaff || Boolean(user?.vendorProfile?.id);
-  const mode: Mode = isSeller ? 'vendor' : 'admin';
 
   const listQuery = useListQueryState({
     defaultTab: 'ALL',
@@ -72,11 +68,10 @@ export function useOrdersPage() {
   });
   const dialog = useFulfillmentDialog();
 
-  const canManage = usePermission(Permission.ORDER_MANAGE);
-  const hasFinanceManage = usePermission(Permission.FINANCE_MANAGE);
+  const canManage = hasPermission(Permission.ORDER_MANAGE);
   // Platform finance actions (manual payment update, COD settlement) are strictly
   // platform operations — third-party vendors never see or execute them.
-  const canSettleFinance = !isSeller && (isAdmin || isSuperAdmin) && hasFinanceManage;
+  const canSettleFinance = isPlatform && hasPermission(Permission.FINANCE_PLATFORM_MANAGE);
 
   const fulfillmentMutation = useUpdateFulfillmentMutation(list.activeListKey, {
     onSuccess: () => {

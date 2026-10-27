@@ -6,8 +6,6 @@ import type { FieldSpec, ProductFormValues } from '../../types';
 export interface AddProductFormBodyProps {
   productId?: string;
   isEditMode: boolean;
-  role?: string;
-  userPermissions?: string[];
   form: UseFormReturn<ProductFormValues>;
   schemaFields: FieldSpec[];
   isSchemaLoading: boolean;

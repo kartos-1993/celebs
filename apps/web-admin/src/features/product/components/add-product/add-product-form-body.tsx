@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { can, Permission } from '@celebs/rbac';
+import { Permission } from '@celebs/rbac';
 
 import { extractVariantsMeta } from '../../fields/variant-utils';
 import { MANAGE_PRODUCTS_PATH } from '../../utils/add-product-helpers';
@@ -15,11 +15,11 @@ import { ProductFormActionsContainer } from './form-actions-container';
 import { ProductSubmissionSidebar } from './product-submission-sidebar';
 import { useAddProductSubmit } from './use-add-product-submit';
 
+import { useAuthContext } from '@/context/auth-provider';
+
 export const AddProductFormBody = ({
   productId,
   isEditMode,
-  role,
-  userPermissions,
   form,
   schemaFields,
   isSchemaLoading,
@@ -67,7 +67,8 @@ export const AddProductFormBody = ({
       isEditMode,
     });
 
-  const canPublish = can(role || 'STAFF', Permission.PRODUCT_PUBLISH, userPermissions);
+  const { hasPermission } = useAuthContext();
+  const canPublish = hasPermission(Permission.PRODUCT_PUBLISH);
   const isCategoryLocked = isEditMode && form.getValues('status') === 'published';
 
   return (

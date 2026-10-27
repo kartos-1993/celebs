@@ -1,9 +1,7 @@
-import React, { ChangeEvent } from 'react';
-import { UseFormReturn } from 'react-hook-form';
-import { Upload, X } from 'lucide-react';
+import React, { type ChangeEvent } from 'react';
+import { type UseFormReturn } from 'react-hook-form';
 
 import type { CreateCategoryType as CategoryFormData } from '@celebs/shared-types';
-import { Button } from '@celebs/shared-ui/components/button';
 import { Checkbox } from '@celebs/shared-ui/components/checkbox';
 import {
   FormControl,
@@ -20,15 +18,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@celebs/shared-ui/components/select';
-import { Spinner } from '@celebs/shared-ui/components/spinner';
 
 import { Category } from '../types';
+
+import { CategoryImageField } from './category-image-field';
 
 export interface CategoryBasicInfoTabProps {
   form: UseFormReturn<CategoryFormData>;
   categories: Category[];
   initialDataId?: string;
-  role?: string;
   isUploadingImage: boolean;
   handleImageUpload: (e: ChangeEvent<HTMLInputElement>) => Promise<void>;
 }
@@ -37,7 +35,6 @@ export const CategoryBasicInfoTab: React.FC<CategoryBasicInfoTabProps> = ({
   form,
   categories,
   initialDataId,
-  role,
   isUploadingImage,
   handleImageUpload,
 }) => {
@@ -101,51 +98,13 @@ export const CategoryBasicInfoTab: React.FC<CategoryBasicInfoTabProps> = ({
         )}
       />
 
-      {role === 'SUPERADMIN' && (
-        <div className="space-y-2 border-t pt-4">
-          <FormLabel>Category Image (Superadmin Only)</FormLabel>
-          <div className="flex items-center space-x-4">
-            {imageUrl ? (
-              <div className="relative w-16 h-16 rounded-md border overflow-hidden group">
-                <img src={imageUrl} alt="Category image" className="w-full h-full object-cover" />
-                <Button
-                  type="button"
-                  onClick={() => form.setValue('imageUrl', null, { shouldDirty: true })}
-                  className="absolute inset-0 bg-black bg-opacity-50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                  size="icon"
-                  variant="ghost"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            ) : (
-              <label className="w-16 h-16 rounded-md border-2 border-dashed border-border flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors">
-                {isUploadingImage ? (
-                  <Spinner size="sm" className="text-muted-foreground" />
-                ) : (
-                  <>
-                    <Upload className="h-6 w-6 text-muted-foreground" />
-                    <span className="text-xs text-muted-foreground mt-1">Upload</span>
-                  </>
-                )}
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  disabled={isUploadingImage}
-                  onChange={handleImageUpload}
-                />
-              </label>
-            )}
-            <div className="text-xs text-muted-foreground space-y-1">
-              <p>Category thumbnail image for storefront navigation.</p>
-              <p>Upload square image (JPEG, PNG, WebP, AVIF) up to 5MB.</p>
-            </div>
-          </div>
-        </div>
-      )}
+      <CategoryImageField
+        imageUrl={imageUrl}
+        isUploading={isUploadingImage}
+        onClear={() => form.setValue('imageUrl', null, { shouldDirty: true })}
+        onUpload={handleImageUpload}
+      />
 
-      {/* Active Status */}
       <div className="space-y-4 border-t pt-4">
         <FormField
           control={form.control}

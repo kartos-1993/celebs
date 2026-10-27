@@ -28,7 +28,7 @@ export default function VerifyEmailPage() {
     loading: false,
   });
 
-  const { user, refetch } = useAuthContext();
+  const { user, refetch, isVendor } = useAuthContext();
   const hasAttemptedRef = useRef(false);
   const { secondsRemaining, isCoolingDown, startCooldown } = useResendCooldown(
     'verify_email_resend_cooldown',
@@ -47,7 +47,7 @@ export default function VerifyEmailPage() {
       setStatus('success');
       setTimeout(() => {
         const targetPath =
-          user?.role === 'VENDOR' && user?.vendorProfile?.status !== 'APPROVED'
+          isVendor && user?.vendorProfile?.status !== 'APPROVED'
             ? PATHS.VENDORS.ONBOARDING
             : PATHS.DASHBOARD;
         navigate(targetPath, { replace: true });

@@ -25,15 +25,11 @@ import { syncDynamicTitleAndBrand } from './sync-dynamic-values';
 import { PageLoader } from '@/components/page-loader';
 import { useAuthContext } from '@/context/auth-provider';
 
-type DraftUserScope = { vendorId?: string; storeId?: string };
-
 export const AddProduct = () => {
   const { id } = useParams();
   const isEditMode = Boolean(id);
-  const { role, user } = useAuthContext();
+  const { user, storeId } = useAuthContext();
   const userId = user?.id || user?.email;
-  const userScope: DraftUserScope | undefined = user;
-  const storeId = userScope?.vendorId ?? userScope?.storeId;
 
   const {
     form,
@@ -116,8 +112,6 @@ export const AddProduct = () => {
         <AddProductFormBody
           productId={id}
           isEditMode={isEditMode}
-          role={role}
-          userPermissions={user?.permissions}
           form={form}
           schemaFields={schemaFields}
           isSchemaLoading={isSchemaLoading}
