@@ -35,8 +35,10 @@ describe('Menu Data Complete RBAC & Permission Matrix Suite', () => {
 
       expect(labels).toContain('Products');
       expect(labels).toContain('Catalog Setup');
-      expect(labels).toContain('Orders & Reviews');
-      expect(labels).toContain('Marketing & SDUI');
+      expect(labels).toContain('Orders');
+      expect(labels).not.toContain('Orders & Reviews');
+      expect(labels).toContain('Marketing & Promotions');
+      expect(labels).not.toContain('Marketing & SDUI');
       expect(labels).toContain('Vendor Management');
       expect(labels).toContain('User Management');
       expect(labels).toContain('Staff & Team');
@@ -47,9 +49,15 @@ describe('Menu Data Complete RBAC & Permission Matrix Suite', () => {
       // SuperAdmin must see the staff Review Queue under Products
       const productSubmenus = getSubmenuLabels('Products', 'SUPERADMIN');
       expect(productSubmenus).toContain('Review Queue');
-      expect(productSubmenus).toContain('Manage Product');
+      expect(productSubmenus).toContain('Manage Products');
       expect(productSubmenus).toContain('Add Product');
       expect(productSubmenus).toContain('Media Center');
+
+      // SuperAdmin must see complete order management submenus without redundant review stub
+      const orderSubmenus = getSubmenuLabels('Orders', 'SUPERADMIN');
+      expect(orderSubmenus).toContain('Manage Orders');
+      expect(orderSubmenus).toContain('Return Orders');
+      expect(orderSubmenus).not.toContain('Reviews');
 
       // SuperAdmin must see Home Layout Editor under Platform Layout
       const platformSubmenus = getSubmenuLabels('Platform Layout', 'SUPERADMIN');
@@ -63,8 +71,10 @@ describe('Menu Data Complete RBAC & Permission Matrix Suite', () => {
       const labels = getMenuLabels('ADMIN');
 
       expect(labels).toContain('Products');
-      expect(labels).toContain('Orders & Reviews');
-      expect(labels).toContain('Marketing & SDUI');
+      expect(labels).toContain('Orders');
+      expect(labels).not.toContain('Orders & Reviews');
+      expect(labels).toContain('Marketing & Promotions');
+      expect(labels).not.toContain('Marketing & SDUI');
       expect(labels).toContain('Vendor Management');
       expect(labels).toContain('User Management');
       expect(labels).toContain('Staff & Team');
@@ -91,15 +101,22 @@ describe('Menu Data Complete RBAC & Permission Matrix Suite', () => {
       const labels = getMenuLabels('VENDOR');
 
       expect(labels).toContain('Products');
-      expect(labels).toContain('Orders & Reviews');
+      expect(labels).toContain('Orders');
+      expect(labels).not.toContain('Orders & Reviews');
       expect(labels).toContain('Staff & Team');
       expect(labels).toContain('Finance');
       expect(labels).toContain('My Account');
+
+      const vendorOrderSubmenus = getSubmenuLabels('Orders', 'VENDOR');
+      expect(vendorOrderSubmenus).toContain('Manage Orders');
+      expect(vendorOrderSubmenus).toContain('Return Orders');
+      expect(vendorOrderSubmenus).not.toContain('Reviews');
     });
 
     it('should NEVER see platform-level admin menus', () => {
       const labels = getMenuLabels('VENDOR');
 
+      expect(labels).not.toContain('Marketing & Promotions');
       expect(labels).not.toContain('Marketing & SDUI');
       expect(labels).not.toContain('Platform Layout');
       expect(labels).not.toContain('Catalog Setup');
@@ -109,7 +126,7 @@ describe('Menu Data Complete RBAC & Permission Matrix Suite', () => {
       // Under Products, vendor must NOT see the staff Review Queue
       const productSubmenus = getSubmenuLabels('Products', 'VENDOR');
       expect(productSubmenus).not.toContain('Review Queue');
-      expect(productSubmenus).toContain('Manage Product');
+      expect(productSubmenus).toContain('Manage Products');
       expect(productSubmenus).toContain('Add Product');
       expect(productSubmenus).toContain('Media Center');
     });
@@ -125,7 +142,9 @@ describe('Menu Data Complete RBAC & Permission Matrix Suite', () => {
       const labels = getMenuLabels('STAFF', [Permission.PRODUCT_VIEW, Permission.PRODUCT_CREATE]);
       expect(labels).toContain('Products');
       expect(labels).toContain('My Account');
+      expect(labels).not.toContain('Orders');
       expect(labels).not.toContain('Orders & Reviews');
+      expect(labels).not.toContain('Marketing & Promotions');
       expect(labels).not.toContain('Marketing & SDUI');
       expect(labels).not.toContain('Staff & Team');
       expect(labels).not.toContain('Finance');
@@ -135,16 +154,23 @@ describe('Menu Data Complete RBAC & Permission Matrix Suite', () => {
         Permission.PRODUCT_CREATE,
       ]);
       expect(productSubmenus).not.toContain('Review Queue');
-      expect(productSubmenus).toContain('Manage Product');
+      expect(productSubmenus).toContain('Manage Products');
     });
 
     it('should see Orders group only when granted order permissions', () => {
       const labels = getMenuLabels('STAFF', [Permission.ORDER_VIEW]);
-      expect(labels).toContain('Orders & Reviews');
+      expect(labels).toContain('Orders');
+      expect(labels).not.toContain('Orders & Reviews');
       expect(labels).toContain('My Account');
       expect(labels).not.toContain('Products');
+      expect(labels).not.toContain('Marketing & Promotions');
       expect(labels).not.toContain('Marketing & SDUI');
       expect(labels).not.toContain('Finance');
+
+      const staffOrderSubmenus = getSubmenuLabels('Orders', 'STAFF', [Permission.ORDER_VIEW]);
+      expect(staffOrderSubmenus).toContain('Manage Orders');
+      expect(staffOrderSubmenus).toContain('Return Orders');
+      expect(staffOrderSubmenus).not.toContain('Reviews');
     });
 
     it('should see Finance group only when granted finance permissions', () => {
@@ -152,6 +178,7 @@ describe('Menu Data Complete RBAC & Permission Matrix Suite', () => {
       expect(labels).toContain('Finance');
       expect(labels).toContain('My Account');
       expect(labels).not.toContain('Products');
+      expect(labels).not.toContain('Orders');
       expect(labels).not.toContain('Orders & Reviews');
     });
 
@@ -174,6 +201,7 @@ describe('Menu Data Complete RBAC & Permission Matrix Suite', () => {
       ];
       const labels = getMenuLabels('STAFF', fullStorePerms);
 
+      expect(labels).not.toContain('Marketing & Promotions');
       expect(labels).not.toContain('Marketing & SDUI');
       expect(labels).not.toContain('Platform Layout');
       expect(labels).not.toContain('Catalog Setup');
@@ -280,9 +308,10 @@ describe('finance submenu by permission', () => {
   it('gives a seller their own earnings and not the platform ledger', () => {
     const labels = getSubmenuLabels('Finance', 'VENDOR', [Permission.FINANCE_VIEW]);
 
-    expect(labels).toContain('My Earnings');
-    expect(labels).not.toContain('Courier Ledger');
-    expect(labels).not.toContain('Commission');
+    expect(labels).toContain('Account Statements');
+    expect(labels).not.toContain('My Earnings');
+    expect(labels).not.toContain('Financial Overview & Remittance');
+    expect(labels).not.toContain('Commission Rates');
   });
 
   it('adds the courier ledger for whoever can read platform finance', () => {
@@ -291,10 +320,10 @@ describe('finance submenu by permission', () => {
       Permission.FINANCE_PLATFORM_VIEW,
     ]);
 
-    expect(labels).toContain('My Earnings');
-    expect(labels).toContain('Courier Ledger');
-    // An admin can read the ledger but must not be offered the rate.
-    expect(labels).not.toContain('Commission');
+    expect(labels).toContain('Seller Statements');
+    expect(labels).toContain('Financial Overview & Remittance');
+    expect(labels).not.toContain('Courier Ledger');
+    expect(labels).not.toContain('Commission Rates');
   });
 
   it('shows commission only to superadmin, matching the route guard', () => {
@@ -304,8 +333,10 @@ describe('finance submenu by permission', () => {
       Permission.COMMISSION_MANAGE,
     ]);
 
-    expect(labels).toContain('Commission');
-    expect(labels).toContain('Courier Ledger');
+    expect(labels).toContain('Commission Rates');
+    expect(labels).toContain('Financial Overview & Remittance');
+    expect(labels).not.toContain('Commission');
+    expect(labels).not.toContain('Courier Ledger');
   });
 
   it('shows no finance group at all without a finance permission', () => {

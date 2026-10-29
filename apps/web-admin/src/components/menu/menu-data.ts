@@ -52,7 +52,7 @@ export function getMenuList(role?: string, userPermissions?: string[]): Group[] 
 
   const productSubmenus: Submenu[] = [];
   if (hasPerm(Permission.PRODUCT_VIEW) || hasPerm(Permission.PRODUCT_CREATE)) {
-    productSubmenus.push({ href: '/products/manage', label: 'Manage Product' });
+    productSubmenus.push({ href: '/products/manage', label: 'Manage Products' });
     productSubmenus.push({ href: '/products/new', label: 'Add Product' });
     productSubmenus.push({ href: '/products/mediacenter', label: 'Media Center' });
   }
@@ -81,12 +81,11 @@ export function getMenuList(role?: string, userPermissions?: string[]): Group[] 
   if (hasPerm(Permission.ORDER_VIEW)) {
     operations.push({
       href: '',
-      label: 'Orders & Reviews',
+      label: 'Orders',
       icon: ListOrdered,
       submenus: [
-        { href: '/orders', label: 'Orders' },
+        { href: '/orders', label: 'Manage Orders' },
         { href: '/orders/return', label: 'Return Orders' },
-        { href: '/orders/reviews', label: 'Reviews' },
       ],
     });
   }
@@ -103,12 +102,12 @@ export function getMenuList(role?: string, userPermissions?: string[]): Group[] 
     pushGroup('Growth', [
       {
         href: '',
-        label: 'Marketing & SDUI',
+        label: 'Marketing & Promotions',
         icon: Megaphone,
         submenus: [
           { href: '/marketing/campaigns', label: 'Festival Campaigns' },
           { href: '/marketing/combos', label: 'Combo Bundles' },
-          { href: '/marketing/preview', label: 'SDUI Storefront Preview' },
+          { href: '/marketing/preview', label: 'Storefront Preview' },
         ],
       },
     ]);
@@ -130,19 +129,24 @@ export function getMenuList(role?: string, userPermissions?: string[]): Group[] 
   }
 
   if (hasPerm(Permission.FINANCE_VIEW)) {
-    // The parent label is for every seller, so the first submenu is their own
-    // earnings rather than the platform ledger: they hold FINANCE_VIEW, not the
-    // platform permission, so sending them to /finance lands them on a 403.
+    // Role-tailored: sellers see their own statements; admins audit vendor payouts.
+    const earningsLabel = currentRole === 'VENDOR' ? 'Account Statements' : 'Seller Statements';
     const financeSubmenus: Array<{ href: string; label: string }> = [
-      { href: '/finance/earnings', label: 'My Earnings' },
+      { href: '/finance/earnings', label: earningsLabel },
     ];
 
     if (hasPerm(Permission.FINANCE_PLATFORM_VIEW)) {
-      financeSubmenus.push({ href: '/finance', label: 'Courier Ledger' });
+      financeSubmenus.push({
+        href: '/finance',
+        label: 'Financial Overview & Remittance',
+      });
     }
 
     if (hasPerm(Permission.COMMISSION_MANAGE)) {
-      financeSubmenus.push({ href: '/finance/commissions', label: 'Commission' });
+      financeSubmenus.push({
+        href: '/finance/commissions',
+        label: 'Commission Rates',
+      });
     }
 
     management.push({
