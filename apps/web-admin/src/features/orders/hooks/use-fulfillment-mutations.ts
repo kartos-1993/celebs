@@ -33,16 +33,25 @@ export function useUpdateFulfillmentMutation(
 }
 
 /** 3PL dispatch — returns tracking so the dialog can record the handover. */
-export function useDispatch3PLMutation(callbacks?: {
-  onSuccess?: (res: Dispatch3PLResponse) => void;
-  onError?: (err: Error) => void;
-}) {
+export function useDispatch3PLMutation(
+  activeListKey?: readonly unknown[],
+  callbacks?: {
+    onSuccess?: (res: Dispatch3PLResponse) => void;
+    onError?: (err: Error) => void;
+  },
+) {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (variables: string | Dispatch3PLParams) => {
       const params = typeof variables === 'string' ? { orderId: variables } : variables;
       return dispatch3PLOrder(params);
     },
-    onSuccess: (res) => callbacks?.onSuccess?.(res),
+    onSuccess: (res) => {
+      if (activeListKey) {
+        queryClient.invalidateQueries({ queryKey: activeListKey });
+      }
+      callbacks?.onSuccess?.(res);
+    },
     onError: (err: Error) => callbacks?.onError?.(err),
   });
 }

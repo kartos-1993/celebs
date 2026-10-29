@@ -11,12 +11,10 @@ import {
 } from '@celebs/shared-ui/components/dialog';
 import { Spinner } from '@celebs/shared-ui/components/spinner';
 
-import { CodSettlementSection } from './cod-settlement-section';
 import { CourierHandoverFields } from './courier-handover-fields';
 import type { FulfillmentDialogProps } from './fulfillment-dialog.types';
 import { FulfillmentStageSelect } from './fulfillment-stage-select';
 import { OrderSummaryCard } from './order-summary-card';
-import { PrepaidPaymentSection } from './prepaid-payment-section';
 
 export function FulfillmentDialog({
   open,
@@ -28,27 +26,18 @@ export function FulfillmentDialog({
   onCourierChange,
   trackingNo,
   onTrackingChange,
-  paymentReference,
-  onReferenceChange,
   canManage,
-  canSettleFinance,
+  isPlatform = true,
   fulfillmentPending,
   dispatchPending,
-  settlePending,
-  paymentPending,
   onFulfill,
   onDispatch,
-  onSettle,
-  onMarkPaid,
-  onMarkFailed,
 }: FulfillmentDialogProps) {
   const canEdit =
     canManage && item && item.itemStatus !== 'DELIVERED' && item.itemStatus !== 'CANCELLED';
-  const showCourierFields = canEdit && (newStatus === 'PACKED' || newStatus === 'HANDED_OVER');
-  const showCodBlock =
-    item?.paymentMethod === 'COD' && item?.paymentStatus === 'PENDING' && canSettleFinance;
-  const showPrepaidBlock =
-    item?.paymentMethod !== 'COD' && item?.paymentStatus === 'PENDING' && canSettleFinance;
+  const showCourierFields =
+    isPlatform && canEdit && (newStatus === 'PACKED' || newStatus === 'HANDED_OVER');
+  const isUnchanged = Boolean(item && newStatus === item.itemStatus);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -59,7 +48,11 @@ export function FulfillmentDialog({
             Fulfill Order #{item?.orderNumber}
           </DialogTitle>
           <DialogDescription>
-            Update item fulfillment stage and attach courier tracking label.
+            {isPlatform
+              ? item?.itemStatus === 'PACKED'
+                ? 'Receive package at Kathmandu Central Hub and dispatch via 3PL courier.'
+                : 'Update item fulfillment stage and attach courier tracking label.'
+              : 'Package order items and update readiness for platform logistics.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -73,7 +66,15 @@ export function FulfillmentDialog({
                   item={item}
                   newStatus={newStatus}
                   onNewStatusChange={onNewStatusChange}
+                  isPlatform={isPlatform}
                 />
+
+                {!isPlatform && item.itemStatus === 'PACKED' && (
+                  <div className="rounded-lg border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
+                    Parcel is packed and awaiting pickup / handover to Celebs Platform Logistics.
+                    3PL courier dispatch and transit updates are managed by the platform.
+                  </div>
+                )}
 
                 {showCourierFields && (
                   <CourierHandoverFields
@@ -89,27 +90,6 @@ export function FulfillmentDialog({
                 )}
               </>
             )}
-
-            {showCodBlock && (
-              <CodSettlementSection
-                paymentReference={paymentReference}
-                onReferenceChange={onReferenceChange}
-                settlePending={settlePending}
-                paymentPending={paymentPending}
-                onSettle={onSettle}
-              />
-            )}
-
-            {showPrepaidBlock && (
-              <PrepaidPaymentSection
-                paymentMethod={item.paymentMethod}
-                paymentReference={paymentReference}
-                onReferenceChange={onReferenceChange}
-                paymentPending={paymentPending}
-                onMarkPaid={onMarkPaid}
-                onMarkFailed={onMarkFailed}
-              />
-            )}
           </div>
         )}
 
@@ -118,7 +98,7 @@ export function FulfillmentDialog({
             Cancel
           </Button>
           {canEdit && (
-            <Button onClick={onFulfill} disabled={fulfillmentPending}>
+            <Button onClick={onFulfill} disabled={fulfillmentPending || isUnchanged}>
               {fulfillmentPending ? <Spinner size="sm" /> : null}
               Save &amp; Notify Customer
             </Button>

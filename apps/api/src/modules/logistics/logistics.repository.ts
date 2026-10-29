@@ -1,4 +1,10 @@
-import { CodStatus, ConsignmentStatus, DispatchMode, OrderStatus } from '@prisma/client';
+import {
+  CodStatus,
+  ConsignmentStatus,
+  DispatchMode,
+  OrderItemStatus,
+  OrderStatus,
+} from '@prisma/client';
 
 import { AppError, ErrorCode, HTTPSTATUS } from '@celebs/shared-utils';
 
@@ -54,15 +60,36 @@ export class LogisticsRepository {
         codAmount: data.codAmount,
         codStatus: data.codStatus,
         estimatedDelivery: data.estimatedDelivery,
-        trackingEvents: {
-          create: {
-            status: OrderStatus.HANDED_OVER,
-            title: `Handed over to ${data.courierName}`,
-            description:
-              data.notes || `Dispatched via ${data.courierName}. Waybill: ${data.trackingNumber}`,
-            location: 'Kathmandu Fulfillment Center',
-            source: 'ADMIN',
+        items: {
+          updateMany: {
+            where: {
+              itemStatus: { in: [OrderItemStatus.PENDING, OrderItemStatus.PACKED] },
+            },
+            data: {
+              itemStatus: OrderItemStatus.HANDED_OVER,
+              courierPartner: data.courierName,
+              trackingNumber: data.trackingNumber,
+            },
           },
+        },
+        trackingEvents: {
+          create: [
+            {
+              status: OrderStatus.PACKED,
+              title: 'Received & verified at Kathmandu Central Hub',
+              description: 'Parcel received from seller and verified by Celebs Hub staff.',
+              location: 'Kathmandu Fulfillment Center',
+              source: 'ADMIN',
+            },
+            {
+              status: OrderStatus.HANDED_OVER,
+              title: `Handed over to ${data.courierName}`,
+              description:
+                data.notes || `Dispatched via ${data.courierName}. Waybill: ${data.trackingNumber}`,
+              location: 'Kathmandu Fulfillment Center',
+              source: 'ADMIN',
+            },
+          ],
         },
       },
       include: {

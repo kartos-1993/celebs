@@ -40,10 +40,6 @@ import { Prisma } from '@/config/db.prisma';
 import { resolveCartLineUnitPrice } from '@/modules/cart/cart-line-price';
 import { commissionService } from '@/modules/finance/commission/commission.service';
 import {
-  postOrderCommissionEntries,
-  postOrderPlacementEntries,
-} from '@/modules/finance/ledger/ledger-posting.service';
-import {
   NotificationService,
   notificationService as defaultNotificationService,
 } from '@/modules/notification/notification.service';
@@ -359,28 +355,8 @@ export class CheckoutService {
     }
     purgeProductHome();
 
-    // Record what the sale was worth. Runs after the reservation committed, and is
-    // keyed on the order so a retried checkout records it once. Best effort: a
-    // ledger failure must not fail an order the customer has already placed, and
-    // the entry is derived from the order row rather than from live pricing, so it
-    // can be posted again later from the same numbers.
-    await postOrderPlacementEntries({ orderId: order.id }).catch((error: unknown) => {
-      logger.error(
-        { orderId: order.id, error: (error as Error).message },
-        'Could not record the order in the ledger; it must be posted manually',
-      );
-    });
-
-    // Commission, one entry per seller, from the rate frozen on each line. Separate
-    // from the placement entries above because it is attributed per line rather
-    // than per order: a basket can hold several sellers' goods, and revenue is
-    // posted once for the whole subtotal.
-    await postOrderCommissionEntries({ orderId: order.id }).catch((error: unknown) => {
-      logger.error(
-        { orderId: order.id, error: (error as Error).message },
-        'Could not record commission in the ledger; it must be posted manually',
-      );
-    });
+    // Revenue and platform commission postings are deferred until DELIVERED status
+    // to prevent premature ghost accounting on cancelled or returned orders.
 
     // Create online payment intent when not COD
     let paymentResult = null;

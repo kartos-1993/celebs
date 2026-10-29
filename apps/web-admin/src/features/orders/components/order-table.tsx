@@ -11,6 +11,7 @@ import {
   TableRow,
 } from '@celebs/shared-ui/components/table';
 
+import { getOrderActionProps } from '../lib/order-constants';
 import type { Mode, OrderItemUI } from '../types';
 
 import { OrderStatusBadge } from './order-status-badge';
@@ -63,71 +64,70 @@ export function OrderTable({ rows, isLoading, isFetching, mode, onUpdate }: Orde
               </TableCell>
             </TableRow>
           ) : (
-            rows.map((ord) => (
-              <TableRow key={ord.id} className="transition-colors hover:bg-muted/50">
-                <TableCell className="font-mono text-xs whitespace-nowrap tabular-nums">
-                  {ord.orderNumber}
-                  <div className="mt-0.5 text-xs font-normal text-muted-foreground">
-                    {new Date(ord.createdAt).toLocaleDateString()}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="max-w-44 truncate text-sm font-semibold tracking-tight leading-tight text-foreground">
-                    {ord.customerName}
-                  </div>
-                  <div className="mt-0.5 flex max-w-44 items-center gap-1 truncate text-xs text-muted-foreground">
-                    <MapPin aria-hidden="true" className="h-3 w-3 shrink-0 text-destructive" />
-                    <span className="truncate">
-                      {ord.cityArea}, {ord.provinceDistrict}
-                    </span>
-                  </div>
-                  <div className="max-w-44 truncate text-xs text-muted-foreground">
-                    {ord.customerPhone}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="max-w-56 truncate text-sm font-semibold tracking-tight leading-tight text-foreground">
-                    {ord.productName}
-                  </div>
-                  <div className="max-w-56 truncate text-xs whitespace-nowrap text-muted-foreground">
-                    Color:{' '}
-                    <span className="font-medium text-foreground">{ord.colorVariantName}</span> |
-                    Size: <span className="font-medium text-foreground">{ord.size}</span> | Qty:{' '}
-                    <span className="font-mono tabular-nums">{ord.quantity}</span>
-                  </div>
-                </TableCell>
-                <TableCell className="whitespace-nowrap">
-                  <PaymentCell row={ord} />
-                </TableCell>
-                <TableCell className="whitespace-nowrap">
-                  <div className="flex flex-col items-start gap-1">
-                    <OrderStatusBadge status={ord.itemStatus} />
-                    {ord.trackingNumber && (
-                      <div className="flex max-w-40 items-center gap-1 truncate font-mono text-xs text-muted-foreground">
-                        <Truck aria-hidden="true" className="h-3 w-3 shrink-0 text-info" />
-                        <span className="truncate">
-                          {ord.courierPartner}: {ord.trackingNumber}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </TableCell>
-                <TableCell className="text-right">
-                  <Button
-                    size="sm"
-                    className="h-7 whitespace-nowrap px-2 text-xs"
-                    variant={ord.itemStatus === 'PENDING' ? 'default' : 'outline'}
-                    onClick={() => onUpdate(ord)}
-                  >
-                    {mode === 'vendor'
-                      ? ord.itemStatus === 'PENDING'
-                        ? 'Pack Order'
-                        : 'Update Status'
-                      : 'View / Update'}
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))
+            rows.map((ord) => {
+              const action = getOrderActionProps(ord.itemStatus, mode === 'vendor');
+              return (
+                <TableRow key={ord.id} className="transition-colors hover:bg-muted/50">
+                  <TableCell className="font-mono text-xs whitespace-nowrap tabular-nums">
+                    {ord.orderNumber}
+                    <div className="mt-0.5 text-xs font-normal text-muted-foreground">
+                      {new Date(ord.createdAt).toLocaleDateString()}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="max-w-44 truncate text-sm font-semibold tracking-tight leading-tight text-foreground">
+                      {ord.customerName}
+                    </div>
+                    <div className="mt-0.5 flex max-w-44 items-center gap-1 truncate text-xs text-muted-foreground">
+                      <MapPin aria-hidden="true" className="h-3 w-3 shrink-0 text-destructive" />
+                      <span className="truncate">
+                        {ord.cityArea}, {ord.provinceDistrict}
+                      </span>
+                    </div>
+                    <div className="max-w-44 truncate text-xs text-muted-foreground">
+                      {ord.customerPhone}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="max-w-56 truncate text-sm font-semibold tracking-tight leading-tight text-foreground">
+                      {ord.productName}
+                    </div>
+                    <div className="max-w-56 truncate text-xs whitespace-nowrap text-muted-foreground">
+                      Color:{' '}
+                      <span className="font-medium text-foreground">{ord.colorVariantName}</span> |
+                      Size: <span className="font-medium text-foreground">{ord.size}</span> | Qty:{' '}
+                      <span className="font-mono tabular-nums">{ord.quantity}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap">
+                    <PaymentCell row={ord} />
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap">
+                    <div className="flex flex-col items-start gap-1">
+                      <OrderStatusBadge status={ord.itemStatus} />
+                      {ord.trackingNumber && (
+                        <div className="flex max-w-40 items-center gap-1 truncate font-mono text-xs text-muted-foreground">
+                          <Truck aria-hidden="true" className="h-3 w-3 shrink-0 text-info" />
+                          <span className="truncate">
+                            {ord.courierPartner}: {ord.trackingNumber}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      size="sm"
+                      className="h-7 whitespace-nowrap px-2 text-xs"
+                      variant={action.variant}
+                      onClick={() => onUpdate(ord)}
+                    >
+                      {action.label}
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              );
+            })
           )}
         </TableBody>
       </Table>

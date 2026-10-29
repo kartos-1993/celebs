@@ -57,7 +57,11 @@ export function CourierHandoverFields({
           <Button
             type="button"
             variant="outline"
-            disabled={!canManage || dispatchPending || newStatus !== 'HANDED_OVER'}
+            disabled={
+              !canManage ||
+              dispatchPending ||
+              (newStatus !== 'PACKED' && newStatus !== 'HANDED_OVER')
+            }
             onClick={onDispatch}
             className="gap-1.5 sm:shrink-0"
           >
@@ -66,11 +70,11 @@ export function CourierHandoverFields({
             ) : (
               <Send aria-hidden="true" className="h-3.5 w-3.5" />
             )}
-            {dispatchPending ? 'Dispatching…' : '3PL Dispatch'}
+            {dispatchPending ? 'Dispatching…' : 'Receive & 3PL Dispatch'}
           </Button>
         </div>
         <p className="text-xs text-muted-foreground">
-          Dispatch hands the parcel to Pathao via 3PL and records the handover.
+          Intakes the parcel at Kathmandu Central Hub, generates waybill, and dispatches via 3PL.
         </p>
       </div>
     </>

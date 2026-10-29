@@ -10,19 +10,12 @@ export interface FulfillmentDialogProps {
   onCourierChange: (courier: string) => void;
   trackingNo: string;
   onTrackingChange: (value: string) => void;
-  paymentReference: string;
-  onReferenceChange: (value: string) => void;
   canManage: boolean;
-  canSettleFinance: boolean;
+  isPlatform?: boolean;
   fulfillmentPending: boolean;
   dispatchPending: boolean;
-  settlePending: boolean;
-  paymentPending: boolean;
   onFulfill: () => void;
   onDispatch: () => void;
-  onSettle: () => void;
-  onMarkPaid: () => void;
-  onMarkFailed: () => void;
 }
 
 export interface CourierHandoverFieldsProps {

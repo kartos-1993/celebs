@@ -1,5 +1,9 @@
 import { AppError, ErrorCode, HTTPSTATUS, logger } from '@celebs/shared-utils';
 
+import {
+  postOrderCommissionEntries,
+  postOrderPlacementEntries,
+} from '../../finance/ledger/ledger-posting.service';
 import { isDispatchAllowed } from '../../logistics/delivery-coverage';
 import {
   type DeliveryCoverageRepository,
@@ -78,6 +82,17 @@ export class FulfillmentService {
     courierPartner?: string,
     isPlatform = false,
   ) {
+    if (!isPlatform) {
+      const ALLOWED_VENDOR_STATUSES = ['PACKED', 'CANCELLED'];
+      if (!ALLOWED_VENDOR_STATUSES.includes(itemStatus)) {
+        throw new AppError(
+          'Vendors are only permitted to pack items or cancel out-of-stock items. Logistics dispatch is managed by Celebs platform.',
+          HTTPSTATUS.FORBIDDEN,
+          ErrorCode.FORBIDDEN_ACCESS,
+        );
+      }
+    }
+
     const item = isPlatform
       ? await this.repo.findOrderItemById(orderItemId)
       : await this.repo.findVendorOrderItemById(orderItemId, vendorId || '');
@@ -135,6 +150,21 @@ export class FulfillmentService {
         trackingNumber,
         courierPartner,
       ).catch(() => {});
+    }
+
+    if (newOrderStatus === 'DELIVERED' || allDelivered) {
+      await postOrderPlacementEntries({ orderId: item.orderId }).catch((error: unknown) => {
+        logger.error(
+          { orderId: item.orderId, error: (error as Error).message },
+          'Could not record the order in the ledger upon delivery',
+        );
+      });
+      await postOrderCommissionEntries({ orderId: item.orderId }).catch((error: unknown) => {
+        logger.error(
+          { orderId: item.orderId, error: (error as Error).message },
+          'Could not record commission in the ledger upon delivery',
+        );
+      });
     }
 
     if (allDelivered && !isPaid) {

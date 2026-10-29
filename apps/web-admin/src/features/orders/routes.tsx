@@ -7,7 +7,7 @@ import { RoleGuard } from '@/routes/role-guard';
 
 export const orderRoutes: RouteObject = {
   path: 'orders',
-  handle: { crumb: 'Orders and Reviews' },
+  handle: { crumb: 'Orders' },
   children: [
     {
       path: '',
@@ -32,18 +32,6 @@ export const orderRoutes: RouteObject = {
         ),
       ),
       handle: { crumb: 'Return Orders', skeleton: 'table' },
-    },
-    {
-      path: 'reviews',
-      ...pageRoute(
-        () => import('./pages/reviews-page'),
-        (Page) => (
-          <RoleGuard requiredPermission={Permission.ORDER_VIEW}>
-            <Page />
-          </RoleGuard>
-        ),
-      ),
-      handle: { crumb: 'Reviews', skeleton: 'table' },
     },
   ],
 };

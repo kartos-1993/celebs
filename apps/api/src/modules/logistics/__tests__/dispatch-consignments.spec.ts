@@ -332,4 +332,34 @@ describe('LogisticsService - Split Consignment Dispatch', () => {
       amount: expect.objectContaining({ toFixed: expect.any(Function) }),
     });
   });
+
+  it('rejects seller dispatch when seller owns no items in order', async () => {
+    mockLogisticsRepo.findOrderForDispatch = vi.fn().mockResolvedValue(createMultiSellerOrder());
+
+    const service = new LogisticsService({
+      logisticsRepo: mockLogisticsRepo,
+      coverageRepo: mockCoverageRepo,
+      consignmentRepo: mockConsignmentRepo,
+    });
+
+    await expect(
+      service.dispatchOrder({ orderId: testOrderId, provider: 'PATHAO' }, 'unrelated-vendor-id'),
+    ).rejects.toThrow('You do not own any item in this order');
+  });
+
+  it('permits platform operator dispatch across any seller items when actorStoreId is null', async () => {
+    mockLogisticsRepo.findOrderForDispatch = vi.fn().mockResolvedValue(createMultiSellerOrder());
+
+    const service = new LogisticsService({
+      logisticsRepo: mockLogisticsRepo,
+      coverageRepo: mockCoverageRepo,
+      consignmentRepo: mockConsignmentRepo,
+    });
+
+    // actorStoreId is null for platform admin
+    const result = await service.dispatchOrder({ orderId: testOrderId, provider: 'MANUAL' }, null);
+
+    expect(result).toBeDefined();
+    expect(result.status).toBe(OrderStatus.HANDED_OVER);
+  });
 });

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { Permission } from '@celebs/rbac';
 
-import type { LogisticsProvider, OrderItemStatus } from '../types';
+import type { LogisticsProvider, OrderItemStatus, OrderItemUI } from '../types';
 
 import { useFulfillmentDialog } from './use-fulfillment-dialog';
 import {
@@ -89,13 +89,14 @@ export function useOrdersPage() {
       }),
   });
 
-  const dispatchMutation = useDispatch3PLMutation({
+  const dispatchMutation = useDispatch3PLMutation(list.activeListKey, {
     onSuccess: (res) => {
       const tracking = res?.data?.trackingNumber || '';
       dialog.applyDispatchResult(tracking);
+      dialog.setIsOpen(false);
       toast({
         title: 'Dispatched to courier',
-        description: tracking ? `Tracking: ${tracking}` : 'Handover recorded.',
+        description: tracking ? `Waybill: ${tracking}` : 'Intake & 3PL dispatch recorded.',
       });
     },
     onError: (err) =>
@@ -172,11 +173,8 @@ export function useOrdersPage() {
   }, [dialog.selectedItem, dialog.courier, dispatchMutation]);
 
   const resolveReference = useCallback(
-    (fallbackPrefix: string) => {
-      const trimmed = dialog.paymentReference.trim();
-      return trimmed.length >= 2 ? trimmed : `${fallbackPrefix}-${Date.now()}`;
-    },
-    [dialog.paymentReference],
+    (fallbackPrefix: string) => `${fallbackPrefix}-${Date.now()}`,
+    [],
   );
 
   const handleSettle = useCallback(() => {
@@ -211,8 +209,16 @@ export function useOrdersPage() {
     [setNewStatus],
   );
 
+  const handleOpenDialog = useCallback(
+    (item: OrderItemUI) => {
+      dialog.openFor(item, isPlatform);
+    },
+    [dialog, isPlatform],
+  );
+
   return {
     mode,
+    isPlatform,
     activeTab,
     searchQuery,
     setSearchQuery,
@@ -236,6 +242,7 @@ export function useOrdersPage() {
     handleMarkPaid,
     handleMarkFailed,
     handleNewStatusChange,
+    handleOpenDialog,
   };
 }
 

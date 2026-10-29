@@ -9,18 +9,18 @@ export function useFulfillmentDialog() {
   const [newStatus, setNewStatus] = useState<OrderItemStatus>('PACKED');
   const [courier, setCourier] = useState(DEFAULT_COURIER);
   const [trackingNo, setTrackingNo] = useState('');
-  const [paymentReference, setPaymentReference] = useState('');
 
-  const openFor = useCallback((item: OrderItemUI) => {
+  const openFor = useCallback((item: OrderItemUI, isPlatform: boolean = true) => {
     setSelectedItem(item);
-    setNewStatus(
-      item.itemStatus === 'DELIVERED' || item.itemStatus === 'CANCELLED'
-        ? item.itemStatus
-        : 'PACKED',
-    );
+    const nextDefault: OrderItemStatus =
+      item.itemStatus === 'PENDING'
+        ? 'PACKED'
+        : item.itemStatus === 'PACKED' && isPlatform
+          ? 'HANDED_OVER'
+          : item.itemStatus;
+    setNewStatus(nextDefault);
     setCourier(item.courierPartner || DEFAULT_COURIER);
     setTrackingNo(item.trackingNumber || '');
-    setPaymentReference('');
     setIsOpen(true);
   }, []);
 
@@ -40,8 +40,6 @@ export function useFulfillmentDialog() {
     setCourier,
     trackingNo,
     setTrackingNo,
-    paymentReference,
-    setPaymentReference,
     openFor,
     applyDispatchResult,
   };

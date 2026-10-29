@@ -20,6 +20,7 @@ import {
 } from './delivery-location.repository';
 import { type LogisticsService, logisticsService } from './logistics.service';
 
+import { isPlatformActor } from '@/common/context/actor-context';
 import { sendSuccess } from '@/common/utils/response.util';
 
 export class LogisticsController {
@@ -52,8 +53,9 @@ export class LogisticsController {
       ...req.body,
     });
 
-    // Sellers: req.store.id, Platform: null → repository enforces vendorId scoping
-    const actorStoreId = req.store?.id ?? null;
+    // Platform operators dispatch with global scope (null); sellers scope to own store
+    const isPlatform = isPlatformActor(req.actor);
+    const actorStoreId = isPlatform ? null : (req.store?.id ?? null);
     const result = await this.service.dispatchOrder(validated, actorStoreId);
 
     return sendSuccess(res, result, 'Order dispatched successfully');
