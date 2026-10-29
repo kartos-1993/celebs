@@ -42,4 +42,36 @@ describe('CSRF Origin Guard Middleware Contract', () => {
     expect(() => csrfOriginGuard(req, res, next)).toThrowError();
     expect(next).not.toHaveBeenCalled();
   });
+
+  it('allows public authentication handshake endpoints even when ambient cookies are present with null origin', () => {
+    const req = {
+      method: 'POST',
+      path: '/api/v1/auth/login',
+      cookies: { accessToken: 'stale-cookie-val' },
+      headers: {},
+    } as unknown as Request;
+
+    const res = {} as Response;
+    const next = vi.fn();
+
+    csrfOriginGuard(req, res, next);
+    expect(next).toHaveBeenCalledTimes(1);
+  });
+
+  it('allows native mobile surface requests with X-Surface header without origin header', () => {
+    const req = {
+      method: 'POST',
+      path: '/api/v1/orders',
+      cookies: { accessToken: 'stale-cookie-val' },
+      headers: {
+        'x-surface': 'mobile',
+      },
+    } as unknown as Request;
+
+    const res = {} as Response;
+    const next = vi.fn();
+
+    csrfOriginGuard(req, res, next);
+    expect(next).toHaveBeenCalledTimes(1);
+  });
 });

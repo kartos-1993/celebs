@@ -6,7 +6,7 @@ import * as ledgerPosting from '../../../finance/ledger/ledger-posting.service';
 import type { FulfillmentRepository } from '../fulfillment.repository';
 import { FulfillmentService } from '../fulfillment.service';
 
-import type { DeliveryCoverageRepository } from '@/modules/delivery-coverage/delivery-coverage.repository';
+import type { DeliveryCoverageRepository } from '@/modules/logistics/delivery-coverage.repository';
 import type { NotificationService } from '@/modules/notification/notification.service';
 
 vi.mock('../../../finance/ledger/ledger-posting.service', () => ({
@@ -145,7 +145,11 @@ describe('FulfillmentService Role Boundaries & Delivery Ledger Posting', () => {
 
   describe('Platform Admin Handover & Delivery-Driven Finance Posting', () => {
     it('allows platform admin to mark order item as DELIVERED and triggers ledger posting', async () => {
-      mockRepo.applyOrderItemStatus.mockResolvedValueOnce({
+      (
+        mockRepo.applyOrderItemStatus as unknown as {
+          mockResolvedValueOnce: (val: unknown) => void;
+        }
+      ).mockResolvedValueOnce({
         updatedItem: { ...mockItem, itemStatus: 'DELIVERED' },
         newOrderStatus: 'DELIVERED',
         allDelivered: true,

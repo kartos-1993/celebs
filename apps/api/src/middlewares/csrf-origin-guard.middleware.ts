@@ -20,6 +20,18 @@ export const EXEMPT_PATHS = [
   '/api/v1/logistics/webhook',
 ];
 
+// Public authentication & onboarding handshakes:
+// These authenticate strictly via payload credentials (email, password, OAuth idToken)
+// to establish a NEW session. They never authorize state changes on behalf of an ambient cookie.
+export const PUBLIC_AUTH_PATHS = [
+  '/api/v1/auth/login',
+  '/api/v1/auth/register',
+  '/api/v1/auth/vendor-register',
+  '/api/v1/auth/google',
+  '/api/v1/auth/forgot-password',
+  '/api/v1/auth/reset-password',
+];
+
 export const csrfOriginGuard = (req: Request, _res: Response, next: NextFunction): void => {
   // 1. Pass safe read-only methods
   if (SAFE_METHODS.has(req.method.toUpperCase())) {
@@ -28,6 +40,16 @@ export const csrfOriginGuard = (req: Request, _res: Response, next: NextFunction
 
   // 2. Pass explicitly exempted webhook endpoints
   if (EXEMPT_PATHS.some((path) => req.path.startsWith(path))) {
+    return next();
+  }
+
+  // 3. Pass public authentication credential handshakes
+  if (PUBLIC_AUTH_PATHS.some((path) => req.path.startsWith(path))) {
+    return next();
+  }
+
+  // 4. Native mobile surface requests (immune to browser cross-site ambient credential forgery)
+  if (req.headers['x-surface'] === 'mobile') {
     return next();
   }
 
