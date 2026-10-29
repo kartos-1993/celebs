@@ -1,16 +1,18 @@
 import React from 'react';
-import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { ChevronRight, Truck } from 'lucide-react-native';
 
 import type { OrderView } from '../utils/order-status';
 import { formatDate } from '../utils/order-status';
 
+import { styles } from './order-card.styles';
 import { OrderCardActions } from './order-card-actions';
 import { OrderCardBadge } from './order-card-badge';
 import { OrderCardItemView } from './order-card-item-view';
 
 import { ThemedText } from '@/components/themed-text';
-import { FontWeight, Palette, Radius } from '@/constants/theme';
+import { Palette } from '@/constants/theme';
 
 interface OrderCardProps {
   order: OrderView;
@@ -21,6 +23,9 @@ interface OrderCardProps {
 export function OrderCard({ order, onPayNow, onCancel }: OrderCardProps) {
   const router = useRouter();
   const totalItemCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
+  const isDelivered = order.status === 'DELIVERED';
+  const isInTransit = order.status === 'HANDED_OVER' || order.status === 'OUT_FOR_DELIVERY';
+  const showTracking = isDelivered || isInTransit;
 
   const handlePressCard = () => {
     router.push({ pathname: '/order-detail', params: { orderId: order.id } });
@@ -44,6 +49,20 @@ export function OrderCard({ order, onPayNow, onCancel }: OrderCardProps) {
 
       <OrderCardItemView items={order.items} />
 
+      {showTracking && (
+        <View style={styles.trackingRow}>
+          <Truck size={13} color={isDelivered ? Palette.success : Palette.brand} />
+          <ThemedText style={styles.trackingText} numberOfLines={1}>
+            {isDelivered
+              ? 'Package delivered · View timeline'
+              : order.status === 'OUT_FOR_DELIVERY'
+                ? 'Out for delivery today'
+                : `In transit · ${order.courierName || 'Standard Delivery'}`}
+          </ThemedText>
+          <ChevronRight size={13} color={Palette.gray400} />
+        </View>
+      )}
+
       <View style={styles.footerRow}>
         <ThemedText style={styles.totalLabel} numberOfLines={1}>
           Total:{' '}
@@ -60,70 +79,3 @@ export function OrderCard({ order, onPayNow, onCancel }: OrderCardProps) {
     </TouchableOpacity>
   );
 }
-
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: Palette.white,
-    marginHorizontal: 12,
-    marginVertical: 5,
-    borderRadius: Radius.md,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#F1F5F9',
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 1.5 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingBottom: 4,
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    flex: 1,
-    marginRight: 8,
-  },
-  orderNumber: {
-    fontSize: 12,
-    fontWeight: FontWeight.bold,
-    color: Palette.gray900,
-  },
-  orderDate: {
-    fontSize: 11,
-    color: Palette.gray400,
-  },
-  divider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: '#F8FAFC',
-    marginVertical: 4,
-  },
-  footerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: 8,
-    paddingTop: 8,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#F8FAFC',
-  },
-  totalLabel: {
-    fontSize: 12,
-    color: Palette.gray600,
-  },
-  totalAmount: {
-    fontSize: 13,
-    fontWeight: FontWeight.black,
-    color: Palette.gray900,
-  },
-  itemCount: {
-    fontSize: 11,
-    color: Palette.gray400,
-  },
-});
