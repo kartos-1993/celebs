@@ -23,5 +23,5 @@ export const commissionRoutes: RouteObject = {
       </RoleGuard>
     ),
   ),
-  handle: { crumb: 'Commission', skeleton: 'dashboard' },
+  handle: { crumb: 'Commission Rates', skeleton: 'dashboard' },
 };

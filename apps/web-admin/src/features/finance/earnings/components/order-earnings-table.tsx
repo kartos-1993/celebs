@@ -29,14 +29,14 @@ export function OrderEarningsTable({ orders }: OrderEarningsTableProps) {
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>Order</TableHead>
-          <TableHead>Date</TableHead>
-          <TableHead className="text-center">Items</TableHead>
-          <TableHead className="text-right">Gross</TableHead>
-          <TableHead className="text-right">Commission</TableHead>
-          <TableHead className="text-right">VAT (13%)</TableHead>
-          <TableHead className="text-right">Net Keep</TableHead>
-          <TableHead className="text-center">Status</TableHead>
+          <TableHead>Order ID</TableHead>
+          <TableHead>Order Date</TableHead>
+          <TableHead className="text-center">Quantity</TableHead>
+          <TableHead className="text-right">Item Sales</TableHead>
+          <TableHead className="text-right">Commission Fee</TableHead>
+          <TableHead className="text-right">VAT on Fee</TableHead>
+          <TableHead className="text-right">Net Payout</TableHead>
+          <TableHead className="text-center">Payout Status</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>

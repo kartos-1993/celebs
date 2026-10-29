@@ -29,5 +29,5 @@ export const earningsRoutes: RouteObject = {
       </RoleGuard>
     ),
   ),
-  handle: { crumb: 'My Earnings', skeleton: 'dashboard' },
+  handle: { crumb: 'Account Statements', skeleton: 'dashboard' },
 };

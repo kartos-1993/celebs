@@ -38,17 +38,17 @@ export function MarketplaceOverviewCards({ overview }: { overview: PlatformOverv
     <div className="space-y-4">
       <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
         <OverviewTile
-          label="Marketplace GMV"
+          label="Gross Merchandise Value (GMV)"
           value={overview.totalGmv}
           subtext={`Gross across ${overview.activeSellersCount} active sellers`}
         />
         <OverviewTile
-          label="Platform Commission"
+          label="Platform Commission Earned"
           value={overview.totalPlatformCommission}
           subtext="Net platform revenue before tax"
         />
         <OverviewTile
-          label="13% Nepal VAT"
+          label="VAT on Commission (13%)"
           value={overview.totalVatCollected}
           subtext="Statutory VAT on commission"
         />
@@ -59,13 +59,13 @@ export function MarketplaceOverviewCards({ overview }: { overview: PlatformOverv
           tone="deduction"
         />
         <OverviewTile
-          label="Settled Disbursements"
+          label="Seller Payouts Disbursed"
           value={overview.totalSettledPayouts}
           subtext="Cleared to sellers' accounts"
           tone="success"
         />
         <OverviewTile
-          label="Pending Escrow Settlement"
+          label="Pending Seller Payouts"
           value={overview.pendingSettlementBalance}
           subtext="Held in bank escrow pool"
           tone="highlight"

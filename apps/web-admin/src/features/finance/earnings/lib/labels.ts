@@ -8,14 +8,14 @@ import type { EarningsEntry } from '../api';
  */
 
 const TYPE_LABEL: Record<string, string> = {
-  ORDER_REVENUE: 'Sale revenue',
-  COMMISSION: 'Platform commission',
-  COURIER_DELIVERY_FEE: 'Delivery charge',
-  FREE_DELIVERY_ABSORBED: 'Free delivery absorbed',
-  REFUND: 'Refund',
-  DELIVERY_CHARGED: 'Delivery charged to customer',
-  COD_RECEIVED: 'Cash collected',
-  COURIER_PAYMENT: 'Courier settlement',
+  ORDER_REVENUE: 'Item Sales Revenue',
+  COMMISSION: 'Marketplace Commission Fee',
+  COURIER_DELIVERY_FEE: 'Courier Delivery Fee',
+  FREE_DELIVERY_ABSORBED: 'Subsidized Delivery',
+  REFUND: 'Refund Deduction',
+  DELIVERY_CHARGED: 'Shipping Paid by Customer',
+  COD_RECEIVED: 'COD Remittance Received',
+  COURIER_PAYMENT: 'Courier Remittance Settlement',
 };
 
 export function entryLabel(entry: EarningsEntry): string {
@@ -23,7 +23,7 @@ export function entryLabel(entry: EarningsEntry): string {
 }
 
 export function entryDirectionLabel(entry: EarningsEntry): string {
-  return entry.direction === 'IN' ? 'Received' : 'Taken';
+  return entry.direction === 'IN' ? 'Credit (+)' : 'Debit (-)';
 }
 
 export function formatEntryDate(occurredAt: string): string {

@@ -37,9 +37,9 @@ export function SettlementsCard({
     <Card>
       <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <CardTitle>Settlements</CardTitle>
+          <CardTitle>Courier COD Remittance</CardTitle>
           <CardDescription>
-            One batch per courier per period. The variance is what the two sides disagree on.
+            Reconcile courier cash-on-delivery collections and verify remittance variances.
           </CardDescription>
         </div>
         <div className="flex items-center gap-2">

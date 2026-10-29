@@ -51,16 +51,20 @@ function SummaryTile({
 export function EarningsSummaryCards({ summary }: { summary: EarningsSummary }) {
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      <SummaryTile label="Gross sales" value={summary.grossSales} currency={summary.currency} />
       <SummaryTile
-        label="Commission"
+        label="Total Item Sales"
+        value={summary.grossSales}
+        currency={summary.currency}
+      />
+      <SummaryTile
+        label="Commission & Fees"
         value={summary.commission}
         currency={summary.currency}
         tone="deduction"
       />
-      <SummaryTile label="Refunds" value={summary.refunds} currency={summary.currency} />
+      <SummaryTile label="Refunds & Returns" value={summary.refunds} currency={summary.currency} />
       <SummaryTile
-        label="You keep"
+        label="Net Payout"
         value={summary.netEarnings}
         currency={summary.currency}
         emphasis

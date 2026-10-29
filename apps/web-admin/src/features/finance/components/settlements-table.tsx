@@ -68,9 +68,9 @@ export function SettlementsTable({
         <TableRow>
           <TableHead>Courier</TableHead>
           <TableHead>Period</TableHead>
-          <TableHead className="text-right">We expected</TableHead>
-          <TableHead className="text-right">Courier declared</TableHead>
-          <TableHead>Variance</TableHead>
+          <TableHead className="text-right">Expected COD Collection</TableHead>
+          <TableHead className="text-right">Remitted by Courier</TableHead>
+          <TableHead>Variance / Discrepancy</TableHead>
           <TableHead>Status</TableHead>
           <TableHead className="w-10">
             <span className="sr-only">Actions</span>

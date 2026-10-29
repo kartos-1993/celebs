@@ -42,8 +42,8 @@ const EarningsPage = () => {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="My Earnings"
-        description="Your sales, the platform commission on them, and what you keep."
+        title="Account Statements"
+        description="Track your order sales, marketplace fees, and net bank disbursements."
       />
 
       {totals ? <EarningsSummaryCards summary={totals} /> : null}
@@ -57,15 +57,15 @@ const EarningsPage = () => {
       >
         <div className="flex items-center justify-between pb-2">
           <TabsList>
-            <TabsTrigger value="orders">By Order</TabsTrigger>
-            <TabsTrigger value="ledger">Ledger Audit</TabsTrigger>
+            <TabsTrigger value="orders">Order Statements</TabsTrigger>
+            <TabsTrigger value="ledger">Transaction History</TabsTrigger>
           </TabsList>
         </div>
 
         <TabsContent value="orders">
           <Card>
             <CardHeader>
-              <CardTitle>Order Breakdown</CardTitle>
+              <CardTitle>Order Overview</CardTitle>
               <CardDescription>
                 Gross item sales, 13% Nepal VAT on platform commission, and credit note deductions
                 per order.
@@ -81,7 +81,7 @@ const EarningsPage = () => {
         <TabsContent value="ledger">
           <Card>
             <CardHeader>
-              <CardTitle>Every Entry</CardTitle>
+              <CardTitle>All Transactions</CardTitle>
               <CardDescription>
                 Line-by-line chronological movements across revenue, commission, and courier fees.
               </CardDescription>

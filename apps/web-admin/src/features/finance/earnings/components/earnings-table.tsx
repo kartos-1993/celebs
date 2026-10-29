@@ -35,10 +35,10 @@ export function EarningsTable({ entries }: { entries: EarningsEntry[] }) {
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>When</TableHead>
-          <TableHead>What</TableHead>
-          <TableHead>Direction</TableHead>
-          <TableHead className="text-right">Amount</TableHead>
+          <TableHead>Date &amp; Time</TableHead>
+          <TableHead>Transaction Details</TableHead>
+          <TableHead>Type</TableHead>
+          <TableHead className="text-right">Amount (NPR)</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
