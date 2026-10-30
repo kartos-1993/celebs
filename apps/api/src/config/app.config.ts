@@ -30,11 +30,8 @@ export const appConfig = () => {
     COOKIE: {
       HTTPONLY: true,
       SECURE: isProduction || isStaging ? true : false,
-      SAME_SITE: (isStaging ? 'none' : isProduction ? 'strict' : 'lax') as
-        | 'strict'
-        | 'lax'
-        | 'none',
-      DOMAIN: validatedEnv.COOKIE_DOMAIN || '',
+      SAME_SITE: (isStaging ? 'none' : 'lax') as 'strict' | 'lax' | 'none',
+      DOMAIN: validatedEnv.COOKIE_DOMAIN || undefined,
     },
     SETUP_SECRET: validatedEnv.SETUP_SECRET,
 

@@ -26,44 +26,24 @@ export const EXEMPT_PATHS = [
 export const PUBLIC_AUTH_PATHS = [
   '/api/v1/auth/login',
   '/api/v1/auth/register',
-  '/api/v1/auth/vendor-register',
+  '/api/v1/auth/vendor/register',
   '/api/v1/auth/google',
   '/api/v1/auth/forgot-password',
   '/api/v1/auth/reset-password',
 ];
 
 export const csrfOriginGuard = (req: Request, _res: Response, next: NextFunction): void => {
-  // 1. Pass safe read-only methods
+  // 1. Safe read-only methods
   if (SAFE_METHODS.has(req.method.toUpperCase())) {
     return next();
   }
 
-  // 2. Pass explicitly exempted webhook endpoints
+  // 2. Cryptographically signed external webhook exemptions (HMAC)
   if (EXEMPT_PATHS.some((path) => req.path.startsWith(path))) {
     return next();
   }
 
-  // 3. Pass public authentication credential handshakes
-  if (PUBLIC_AUTH_PATHS.some((path) => req.path.startsWith(path))) {
-    return next();
-  }
-
-  // 4. Native mobile surface requests (immune to browser cross-site ambient credential forgery)
-  if (req.headers['x-surface'] === 'mobile') {
-    return next();
-  }
-
-  // 3. Determine if the request relies on browser cookie authentication
-  const hasAuthCookie = Boolean(req.cookies?.accessToken || req.cookies?.refreshToken);
-  const hasBearerHeader = Boolean(req.headers.authorization?.startsWith('Bearer '));
-
-  // If request does not rely on ambient cookies or explicitly provides Bearer auth
-  // (mobile app or programmatic client), CSRF via ambient credentials is not applicable
-  if (!hasAuthCookie || hasBearerHeader) {
-    return next();
-  }
-
-  // 4. Request relies on ambient cookies: verify Origin / Referer
+  // 3. Extract and normalize origin information
   const originHeader = req.headers.origin;
   const refererHeader = req.headers.referer;
 
@@ -72,14 +52,15 @@ export const csrfOriginGuard = (req: Request, _res: Response, next: NextFunction
     requestOrigin = originHeader.trim();
   } else if (typeof refererHeader === 'string' && refererHeader.trim() !== '') {
     try {
-      const parsedUrl = new URL(refererHeader);
-      requestOrigin = parsedUrl.origin;
+      requestOrigin = new URL(refererHeader).origin;
     } catch {
       requestOrigin = null;
     }
   }
 
-  if (!requestOrigin || !isAllowedOrigin(requestOrigin)) {
+  // 4. Critical: If an Origin is present, it MUST match the allowed origins list.
+  // This completely eliminates Login CSRF on public auth endpoints.
+  if (requestOrigin && !isAllowedOrigin(requestOrigin, allowedOriginsList)) {
     logger.warn(
       {
         path: req.path,
@@ -87,13 +68,51 @@ export const csrfOriginGuard = (req: Request, _res: Response, next: NextFunction
         origin: requestOrigin,
         allowedOrigins: allowedOriginsList,
       },
-      'CSRF origin guard blocked cross-site state-changing request',
+      'CSRF origin guard blocked untrusted browser origin',
     );
     throw new ForbiddenException(
-      'Cross-site request blocked: unauthorized or missing origin header',
+      'Cross-site request blocked: unauthorized origin',
       ErrorCode.FORBIDDEN_ACCESS,
     );
   }
 
-  return next();
+  // 5. Block explicit browser cross-site metadata flag
+  if (req.headers['sec-fetch-site'] === 'cross-site') {
+    throw new ForbiddenException(
+      'Cross-site request blocked via fetch metadata',
+      ErrorCode.FORBIDDEN_ACCESS,
+    );
+  }
+
+  // 6. Check for ambient credentials vs explicit Bearer / token headers
+  const hasAuthCookie = Boolean(req.cookies?.accessToken || req.cookies?.refreshToken);
+  const hasBearerHeader = Boolean(req.headers.authorization?.startsWith('Bearer '));
+  const hasHeaderRefreshToken = Boolean(req.headers['x-refresh-token']);
+
+  // If request uses Bearer auth, explicit token headers, or has no cookies, ambient CSRF is impossible
+  if (!hasAuthCookie || hasBearerHeader || hasHeaderRefreshToken) {
+    return next();
+  }
+
+  // 7. Ambient cookie request carrying a verified allowed origin
+  if (requestOrigin) {
+    return next();
+  }
+
+  // 8. Ambient cookies present without Origin:
+  // Allow strictly public credential handshakes from non-browser clients
+  const isPublicAuth = PUBLIC_AUTH_PATHS.some((path) => req.path.startsWith(path));
+  if (isPublicAuth) {
+    return next();
+  }
+
+  // 9. Reject state-changing cookie requests lacking valid Origin
+  logger.warn(
+    { path: req.path, method: req.method, origin: requestOrigin },
+    'CSRF origin guard blocked ambient credential request missing valid origin',
+  );
+  throw new ForbiddenException(
+    'Cross-site request blocked: missing origin header for cookie-authenticated request',
+    ErrorCode.FORBIDDEN_ACCESS,
+  );
 };
