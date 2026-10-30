@@ -135,8 +135,8 @@ describe('Session Lifecycle & Expiry Enforcement Test Suite', () => {
       },
     });
 
-    const deletedCount = await sessionService.purgeExpiredSessions();
-    expect(deletedCount).toBeGreaterThanOrEqual(1);
+    const { deletedSessions } = await sessionService.purgeExpiredSessions();
+    expect(deletedSessions).toBeGreaterThanOrEqual(1);
 
     // Check specific records
     const expiredRecord = await prisma.session.findUnique({ where: { id: expired.id } });

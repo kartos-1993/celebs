@@ -54,6 +54,17 @@ export class SessionRepository {
     return result.count;
   }
 
+  public async deleteExpiredVerificationCodes(cutoff: Date = new Date()): Promise<number> {
+    const result = await prisma.verificationCode.deleteMany({
+      where: {
+        expiresAt: {
+          lt: cutoff,
+        },
+      },
+    });
+    return result.count;
+  }
+
   public async findSessionsByUserIds(userIds: string[]) {
     return prisma.session.findMany({
       where: { userId: { in: userIds } },

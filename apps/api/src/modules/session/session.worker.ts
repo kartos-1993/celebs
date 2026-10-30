@@ -12,9 +12,12 @@ export const sessionWorker = new Worker(
     if (job.name === 'purge-expired-sessions') {
       logger.info('Starting scheduled expired session purge...');
       try {
-        const deletedCount = await sessionService.purgeExpiredSessions();
-        logger.info({ deletedCount }, 'Expired session purge completed successfully');
-        return { deletedCount };
+        const { deletedSessions, deletedCodes } = await sessionService.purgeExpiredSessions();
+        logger.info(
+          { deletedSessions, deletedCodes },
+          'Expired session and verification code purge completed successfully',
+        );
+        return { deletedSessions, deletedCodes };
       } catch (error: unknown) {
         const errMsg = error instanceof Error ? error.message : String(error);
         logger.error({ error: errMsg }, 'Failed to purge expired sessions');

@@ -35,8 +35,12 @@ export class SessionService {
     };
   }
 
-  public async purgeExpiredSessions(): Promise<number> {
-    return this.sessionRepo.deleteExpiredSessions();
+  public async purgeExpiredSessions(): Promise<{ deletedSessions: number; deletedCodes: number }> {
+    const [deletedSessions, deletedCodes] = await Promise.all([
+      this.sessionRepo.deleteExpiredSessions(),
+      this.sessionRepo.deleteExpiredVerificationCodes(),
+    ]);
+    return { deletedSessions, deletedCodes };
   }
 }
 
