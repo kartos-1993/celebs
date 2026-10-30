@@ -22,6 +22,11 @@ describe('Mobile API Client Error Response Interceptor', () => {
     vi.restoreAllMocks();
   });
 
+  it('configures client with credentials disabled and mobile surface header', () => {
+    expect(apiClient.defaults.withCredentials).toBe(false);
+    expect(apiClient.defaults.headers['X-Surface']).toBe('mobile');
+  });
+
   it('preserves canonical errorCode from backend response in rejected ApiError code property', async () => {
     // Simulate server 422 error carrying canonical IApiResponse errorCode
     apiClient.defaults.adapter = async (config) => {

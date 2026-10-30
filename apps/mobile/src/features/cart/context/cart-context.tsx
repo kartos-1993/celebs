@@ -86,11 +86,15 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     items.length > 0 && items.every((item) => selectedItemIds.includes(item.id));
 
   const handleAddToCart = useCallback(
-    (input: AddToCartInput) => addToCartMutation.mutateAsync(input),
+    async (input: AddToCartInput) => {
+      await addToCartMutation.mutateAsync(input);
+    },
     [addToCartMutation],
   );
   const handleAddComboToCart = useCallback(
-    (input: AddComboToCartInput) => addComboToCartMutation.mutateAsync(input),
+    async (input: AddComboToCartInput) => {
+      await addComboToCartMutation.mutateAsync(input);
+    },
     [addComboToCartMutation],
   );
   const handleUpdateQuantity = useCallback(
@@ -104,10 +108,14 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     [removeItemMutation, updateQuantityMutation],
   );
   const handleRemoveItem = useCallback(
-    (id: string) => removeItemMutation.mutateAsync(id),
+    async (id: string) => {
+      await removeItemMutation.mutateAsync(id);
+    },
     [removeItemMutation],
   );
-  const handleClearCart = useCallback(() => clearCartMutation.mutateAsync(), [clearCartMutation]);
+  const handleClearCart = useCallback(async () => {
+    await clearCartMutation.mutateAsync();
+  }, [clearCartMutation]);
   const handleRefreshCart = useCallback(async () => {
     await refetch();
   }, [refetch]);

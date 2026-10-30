@@ -29,7 +29,7 @@ export const getApiBaseUrl = (): string => {
 
 export const apiClient = axios.create({
   timeout: API_CONFIG.timeout,
-  withCredentials: true,
+  withCredentials: false,
   headers: {
     'Content-Type': 'application/json',
     Accept: 'application/json',
