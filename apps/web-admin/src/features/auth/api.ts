@@ -51,11 +51,11 @@ export async function resendVerification(data: { email: string }) {
 }
 
 export async function forgotPassword(data: ForgotPasswordPayload) {
-  return await axiosClient.post('/auth/password-forgot', data);
+  return await axiosClient.post('/auth/forgot-password', data);
 }
 
 export async function resetPassword(data: resetPasswordType) {
-  return await axiosClient.post('/auth/password-reset', data);
+  return await axiosClient.post('/auth/reset-password', data);
 }
 
 export async function verifyMFA(data: verifyMFAType) {

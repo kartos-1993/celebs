@@ -46,4 +46,38 @@ describe('Web-Admin Axios Interceptors Authentication Bypass', () => {
     // Must NOT attempt to refresh token on a public auth bypass endpoint
     expect(postSpy).not.toHaveBeenCalledWith('/auth/refresh', expect.anything(), expect.anything());
   });
+
+  it('does not trigger a session refresh attempt when a 401 is received from reset-password', async () => {
+    const testClient = axios.create({ baseURL: 'http://localhost:3333/api/v1' });
+    setupInterceptors(testClient);
+
+    const postSpy = vi.spyOn(testClient, 'post');
+
+    testClient.defaults.adapter = async (config) => {
+      const err = new AxiosError('Unauthorized', 'ERR_BAD_REQUEST', config, null, {
+        status: 401,
+        statusText: 'Unauthorized',
+        headers: {},
+        config,
+        data: {
+          success: false,
+          message: 'Invalid email or reset token',
+          errorCode: 'INVALID_CREDENTIALS',
+        },
+      });
+      return Promise.reject(err);
+    };
+
+    try {
+      await testClient.post('/auth/reset-password', {
+        verificationCode: 'invalid-code',
+        password: 'Password123!',
+      });
+    } catch {
+      // expected error
+    }
+
+    // Must NOT attempt to refresh token on a public auth bypass endpoint
+    expect(postSpy).not.toHaveBeenCalledWith('/auth/refresh', expect.anything(), expect.anything());
+  });
 });

@@ -8,6 +8,14 @@ export const authRoutes: RouteObject[] = [
     ...pageRoute(() => import('./pages/sign-in-page')),
   },
   {
+    path: '/forgot-password',
+    ...pageRoute(() => import('./pages/forgot-password-page')),
+  },
+  {
+    path: '/reset-password',
+    ...pageRoute(() => import('./pages/reset-password-page')),
+  },
+  {
     path: '/setup-superadmin',
     ...pageRoute(() => import('./pages/setup-superadmin-page')),
   },
